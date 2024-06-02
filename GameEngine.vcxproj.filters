@@ -1,0 +1,137 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\External">
+      <UniqueIdentifier>{e8910f59-f0a4-42a6-a525-4a63acfcae83}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Rendering">
+      <UniqueIdentifier>{0e7c1861-586d-4e5a-a3c3-c2c241f51afd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\External\ImGui">
+      <UniqueIdentifier>{01f77d7e-d86b-44ab-a87f-20ef793538a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\UI">
+      <UniqueIdentifier>{38612559-5fd8-4ef0-8ea3-9bfeb834c68d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependecies\include\glad\glad.c">
+      <Filter>Header Files\External</Filter>
+    </ClCompile>
+    <ClCompile Include="stbi.cpp">
+      <Filter>Header Files\External</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependecies\imgui\imgui.cpp">
+      <Filter>Header Files\External\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependecies\imgui\imgui_demo.cpp">
+      <Filter>Header Files\External\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependecies\imgui\imgui_draw.cpp">
+      <Filter>Header Files\External\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependecies\imgui\imgui_impl_glfw.cpp">
+      <Filter>Header Files\External\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependecies\imgui\imgui_impl_opengl3.cpp">
+      <Filter>Header Files\External\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependecies\imgui\imgui_tables.cpp">
+      <Filter>Header Files\External\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependecies\imgui\imgui_widgets.cpp">
+      <Filter>Header Files\External\ImGui</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Window.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Dependecies\include\glad\glad.h">
+      <Filter>Header Files\External</Filter>
+    </ClInclude>
+    <ClInclude Include="Dependecies\include\glad\khrplatform.h">
+      <Filter>Header Files\External</Filter>
+    </ClInclude>
+    <ClInclude Include="App.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Debug.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Render.hpp">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceManager.hpp">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderingStructs.hpp">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Dependecies\imgui\imconfig.h">
+      <Filter>Header Files\External\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Dependecies\imgui\imgui.h">
+      <Filter>Header Files\External\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Dependecies\imgui\imgui_impl_glfw.h">
+      <Filter>Header Files\External\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Dependecies\imgui\imgui_impl_opengl3.h">
+      <Filter>Header Files\External\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Dependecies\imgui\imgui_impl_opengl3_loader.h">
+      <Filter>Header Files\External\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Dependecies\imgui\imgui_internal.h">
+      <Filter>Header Files\External\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Dependecies\imgui\imstb_rectpack.h">
+      <Filter>Header Files\External\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Dependecies\imgui\imstb_textedit.h">
+      <Filter>Header Files\External\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Dependecies\imgui\imstb_truetype.h">
+      <Filter>Header Files\External\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Profiler.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderingVariables.hpp">
+      <Filter>Header Files\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="UI.hpp">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UIVariables.hpp">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UIStructs.hpp">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Shaders\Basic.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Resources\Shaders\Basic.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>
