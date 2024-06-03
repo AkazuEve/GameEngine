@@ -119,12 +119,6 @@
     <ClInclude Include="UI.hpp">
       <Filter>Header Files\UI</Filter>
     </ClInclude>
-    <ClInclude Include="UIVariables.hpp">
-      <Filter>Header Files\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="UIStructs.hpp">
-      <Filter>Header Files\UI</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Shaders\Basic.frag">

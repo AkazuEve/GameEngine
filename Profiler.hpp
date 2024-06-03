@@ -7,9 +7,9 @@
 #include "UI.hpp"
 
 namespace Profiler {
-	class Profiler: UIElement {
+	class Profiler {
 	public:
-		Profiler(): UIElement(UI_PROFILER) {
+		Profiler() {
 			m_samples.reserve(12000);
 			for (unsigned int i{ 0 }; i < m_samples.capacity(); i++) {
 				m_samples.push_back(100.0f);
@@ -24,7 +24,8 @@ namespace Profiler {
 		std::vector<float> m_samples;
 		unsigned int m_lastSample = 0;
 
-		virtual void OnUIRender() override {
+		/*
+		void OnUIRender() {
 			static ImGuiIO& io = ImGui::GetIO(); (void)io;
 			static float ms;
 			static unsigned int sampleCount;
@@ -49,5 +50,6 @@ namespace Profiler {
 				ImGui::TreePop();
 			}
 		}
+		*/
 	};
 }

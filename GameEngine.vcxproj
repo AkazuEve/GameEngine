@@ -116,8 +116,6 @@
     <ClInclude Include="ResourceManager.hpp" />
     <ClInclude Include="RenderingStructs.hpp" />
     <ClInclude Include="UI.hpp" />
-    <ClInclude Include="UIStructs.hpp" />
-    <ClInclude Include="UIVariables.hpp" />
     <ClInclude Include="Window.hpp" />
   </ItemGroup>
   <ItemGroup>

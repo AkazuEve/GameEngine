@@ -2,166 +2,168 @@
 
 #include "Debug.hpp"
 
-#include <map>
 #include <vector>
-#include <algorithm>
+#include <string>
+#include <functional>
 
 #include "Dependecies/imgui/imgui.h"
 #include "Dependecies/imgui/imgui_impl_glfw.h"
 #include "Dependecies/imgui/imgui_impl_opengl3.h"
 
-#include "UIVariables.hpp"
-#include "UIStructs.hpp"
-
 namespace UIManager {
-	void Init(GLFWwindow* window) {
-		pCurrentWindow = window;
 
-		//Setup ImGui
-		IMGUI_CHECKVERSION();
-		ImGui::CreateContext();
-		ImGuiIO& io = ImGui::GetIO(); (void)io;
-		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;    // Enable Gamepad Controls
-		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
-		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;     // Enable Multi-Viewport / Platform Windows
+	ImVec2 m_viewportSize{ 100.0f, 100.0f };
 
-		io.ConfigViewportsNoTaskBarIcon = true;
+	struct UIWindow {
+		UIWindow(std::string name) : windowName(name) {};
 
-		ImGui::StyleColorsDark();
+		std::vector<void (*)()> pUIFunctions;
+		std::string windowName;
+		bool enabled{ true };
+	};
 
-		ImGui_ImplGlfw_InitForOpenGL(pCurrentWindow, true);
-		ImGui_ImplOpenGL3_Init("#version 450");
+	class UIManager { 
+	public:
+		UIManager() {
+			glGenFramebuffers(1, &m_frameBuffer);
+			glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
 
-		glGenFramebuffers(1, &frameBuffer);
-		glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+			glGenTextures(1, &m_frameBufferTexture);
+			glBindTexture(GL_TEXTURE_2D, m_frameBufferTexture);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1920, 1080, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_frameBufferTexture, 0);
+		}
+		~UIManager() {
+			//Free all resources
+			glDeleteTextures(1, &m_frameBufferTexture);
+			glDeleteFramebuffers(1, &m_frameBuffer);
 
-		glGenTextures(1, &frameBufferTexture);
-		glBindTexture(GL_TEXTURE_2D, frameBufferTexture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 800, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, frameBufferTexture, 0);
-	}
+			ImGui_ImplOpenGL3_Shutdown();
+			ImGui_ImplGlfw_Shutdown();
+			ImGui::DestroyContext();
+		}
 
-	void Render() {
-		static int width, height;
-		glfwGetWindowSize(pCurrentWindow, &width, &height);
-		static ImVec2 vportSize;
+		void InitImGui(GLFWwindow* window) {
+			m_pCurrentWindow = window;
+			//Setup ImGui
+			IMGUI_CHECKVERSION();
+			ImGui::CreateContext();
+			ImGuiIO& io = ImGui::GetIO(); (void)io;
+			io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+			//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;    // Enable Gamepad Controls
+			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
+			//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;     // Enable Multi-Viewport / Platform Windows
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glViewport(0, 0, width, height);
-		//New frame
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
+			io.ConfigViewportsNoTaskBarIcon = true;
 
+			ImGui::StyleColorsDark();
 
-		//Render all UI windows (I am addicted to reinterpret_cast)
-		ImGui::DockSpaceOverViewport();
+			ImGui_ImplGlfw_InitForOpenGL(m_pCurrentWindow, true);
+			ImGui_ImplOpenGL3_Init("#version 450");
+		}
 
-		if (ImGui::BeginMainMenuBar()) {
-			if (ImGui::BeginMenu("File"))
-			{
-				if (ImGui::MenuItem("Exit")) { glfwSetWindowShouldClose(pCurrentWindow, true); }
-				ImGui::EndMenu();
+		void RegisterElement(void (*func)(), std::string windowName) {
+
+			if (m_UIWindows.size() == 0) {
+				m_UIWindows.push_back(UIWindow{windowName});
+				DEBUGPRINT("Size 0");
 			}
-			if (ImGui::BeginMenu("Windows"))
-			{
-				ImGui::Checkbox("Debug", &debugWindow);
-				ImGui::Checkbox("Profiler", &profilerWindow);
-				ImGui::Checkbox("Models", &modelWindow);
-				ImGui::Checkbox("Viewport", &viewportWindow);
-				ImGui::Checkbox("Renderer", &rendererWindow);
-				ImGui::Checkbox("ImGui Demo Window" ,&demoWindow);
 
-				ImGui::EndMenu();
+			bool foundWindow = false;
+			for (UIWindow window : m_UIWindows) {
+				if (window.windowName == windowName) {
+					foundWindow = true;
+					DEBUGPRINT("Fount array with name: " << windowName);
+				}
 			}
-			ImGui::EndMainMenuBar();
-		}
 
-		if (viewportWindow) {
-			ImGui::Begin("Viewport", &viewportWindow);
-			ImGui::BeginChild("Viewport");
-
-			vportSize = ImGui::GetWindowSize();
-			viewportWidth = (unsigned int)vportSize.x;
-			viewportHeight = (unsigned int)vportSize.y;
-
-			glBindTexture(GL_TEXTURE_2D, frameBufferTexture);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (GLsizei)vportSize.x, (GLsizei)vportSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-			ImGui::Image(*(ImTextureID*)&frameBufferTexture, vportSize, ImVec2(0, 1), ImVec2(1, 0));
-
-			ImGui::EndChild();
-			ImGui::End();
-		}
-
-		if (debugWindow) {
-			ImGui::Begin("Debug", &debugWindow);
-			for (void* element: registeredElements) {
-				if (reinterpret_cast<UIElement*>(element)->GetType() == UI_DEBUG)
-					reinterpret_cast<UIElement*>(element)->OnUIRender();
+			if (!foundWindow) {
+				m_UIWindows.push_back(windowName);
+				DEBUGPRINT("Pushed in not yet existing window:" << windowName);
 			}
-			ImGui::End();
-		}
 
-		if (modelWindow) {
-			ImGui::Begin("Models", &modelWindow);
-			for (void* element: registeredElements) {
-				if (reinterpret_cast<UIElement*>(element)->GetType() == UI_MODEL)
-					reinterpret_cast<UIElement*>(element)->OnUIRender();
+			for (UIWindow window : m_UIWindows) {
+				if (window.windowName == windowName) {
+					window.pUIFunctions.push_back(func);
+					DEBUGPRINT("Found existing window: " << windowName << " and function ptr has been pushed in");
+				}
 			}
-			ImGui::End();
 		}
-		
-		if (profilerWindow) {
-			ImGui::Begin("Profiler", &profilerWindow);
-			for (void* element : registeredElements) {
-				if (reinterpret_cast<UIElement*>(element)->GetType() == UI_PROFILER)
-					reinterpret_cast<UIElement*>(element)->OnUIRender();
+
+		void BeginFrame() {   //New frame
+			ImGui_ImplOpenGL3_NewFrame();
+			ImGui_ImplGlfw_NewFrame();
+			ImGui::NewFrame();
+
+			static int width, height;
+			glfwGetWindowSize(m_pCurrentWindow, &width, &height);
+
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			glViewport(0, 0, width, height);
+		}
+
+		void RenderUI() {   //Render all UI
+			ImGui::DockSpaceOverViewport();
+
+			/*
+			if (ImGui::BeginMainMenuBar()) {
+				if (ImGui::BeginMenu("File"))
+				{
+					if (ImGui::MenuItem("Exit")) { glfwSetWindowShouldClose(pCurrentWindow, true); }
+					ImGui::EndMenu();
+				}
+				if (ImGui::BeginMenu("Windows"))
+				{
+					ImGui::Checkbox("Debug", &debugWindow);
+					ImGui::Checkbox("Profiler", &profilerWindow);
+					ImGui::Checkbox("Models", &modelWindow);
+					ImGui::Checkbox("Viewport", &viewportWindow);
+					ImGui::Checkbox("Renderer", &rendererWindow);
+					ImGui::Checkbox("ImGui Demo Window", &demoWindow);
+
+					ImGui::EndMenu();
+				}
+				ImGui::EndMainMenuBar();
 			}
-			ImGui::End();
+			*/
+
+				ImGui::Begin("Viewport");
+				ImGui::BeginChild("Viewport");
+
+				m_viewportSize = ImGui::GetWindowSize();
+
+				glBindTexture(GL_TEXTURE_2D, m_frameBufferTexture);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (GLsizei)m_viewportSize.x, (GLsizei)m_viewportSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+				ImGui::Image(*(ImTextureID*)&m_frameBufferTexture, m_viewportSize, ImVec2(0, 1), ImVec2(1, 0));
+
+				ImGui::EndChild();
+				ImGui::End();
+			
 		}
-		
-		if (rendererWindow) {
-			ImGui::Begin("Renderer", &rendererWindow);
-			for (void* element : registeredElements) {
-				if (reinterpret_cast<UIElement*>(element)->GetType() == UI_RENDERER)
-					reinterpret_cast<UIElement*>(element)->OnUIRender();
-			}
-			ImGui::End();
+
+		void EndFrame() {   //Render UI
+			ImGui::Render();
+			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+			static GLFWwindow* backup_current_context; backup_current_context = glfwGetCurrentContext();
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+			glfwMakeContextCurrent(backup_current_context);
+
+			glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+			glViewport(0, 0, (GLsizei)m_viewportSize.x, (GLsizei)m_viewportSize.y);
 		}
 
-		if (demoWindow) {
-			ImGui::ShowDemoWindow(&demoWindow);
-		}
-	
+	private:
+		GLFWwindow* m_pCurrentWindow = nullptr;
 
-		//Render and handle muli window bs
-		ImGui::Render();
-		static int display_w, display_h;
-		glfwGetFramebufferSize(pCurrentWindow, &display_w, &display_h);
-		glViewport(0, 0, display_w, display_h);
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		GLuint m_frameBuffer;
+		GLuint m_frameBufferTexture;
 
-		static GLFWwindow* backup_current_context; backup_current_context = glfwGetCurrentContext();
-		ImGui::UpdatePlatformWindows();
-		ImGui::RenderPlatformWindowsDefault();
-		glfwMakeContextCurrent(backup_current_context);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-		glViewport(0, 0, (GLsizei)vportSize.x, (GLsizei)vportSize.y);
-	}
-
-	void Free() {
-		//Free all resources
-		glDeleteTextures(1, &frameBufferTexture);
-		glDeleteFramebuffers(1, &frameBuffer);
-
-		ImGui_ImplOpenGL3_Shutdown();
-		ImGui_ImplGlfw_Shutdown();
-		ImGui::DestroyContext();
-	}
+		std::vector<UIWindow> m_UIWindows;
+	};
 }

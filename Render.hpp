@@ -12,11 +12,10 @@
 #include "ResourceManager.hpp"
 #include "RenderingVariables.hpp"
 #include "RenderingStructs.hpp"
-#include "UIStructs.hpp"
 #include "Debug.hpp"
+#include "UI.hpp"
 
-extern unsigned int viewportWidth;
-extern unsigned int viewportHeight;
+extern ImVec2 UIManager::m_viewportSize;
 
 namespace Renderer {
 	class Shader {
@@ -246,7 +245,7 @@ namespace Renderer {
 		~Camera() {};
 
 		void UpdateMatrix() { 
-			m_projection = glm::perspective(glm::radians(Fov), (float)viewportWidth / (float)viewportHeight, 0.1f, 100.0f);
+			m_projection = glm::perspective(glm::radians(Fov), (float)UIManager::m_viewportSize.x / (float)UIManager::m_viewportSize.y, 0.1f, 100.0f);
 			m_view = glm::lookAt(position, position + glm::vec3(0.0f, 0.0f, 1.0f), Up);
 			glUniformMatrix4fv(glGetUniformLocation(static_cast<Shader*>(pCurrentShader)->GetID(), "cameraMatrix"), 1, GL_FALSE, glm::value_ptr(m_projection * m_view));
 		};
@@ -263,9 +262,9 @@ namespace Renderer {
 		glm::vec3 position{ 0.0f, 0.2f, -3.0f };
 	};
 
-	class Model: UIElement {
+	class Model {
 	public:
-		Model(std::string name, std::string meshPath, std::string texturePath): m_name(name), UIElement(UI_MODEL) {
+		Model(std::string name, std::string meshPath, std::string texturePath): m_name(name) {
 			m_mesh.SendModelData(LoadModelFromPLYFile(meshPath));
 			m_diffuseTexture.SendTextureData(texturePath);
 
@@ -308,8 +307,8 @@ namespace Renderer {
 
 			m_modelMatrix = glm::scale(m_modelMatrix, scale);
 		}
-
-		virtual void OnUIRender() override {
+		/*
+		void OnUIRender() {
 			if (ImGui::TreeNode(m_name.c_str()))
 			{
 				ImGui::Checkbox("Is rendered", &m_isRendered);
@@ -330,6 +329,7 @@ namespace Renderer {
 				ImGui::TreePop();
 			}
 		}
+		*/
 
 	public:
 		glm::vec3 position{ 0.0f };
@@ -337,18 +337,14 @@ namespace Renderer {
 		glm::vec3 scale   { 1.0f };
 	};
 
-	class Renderer: UIElement {
+	class Renderer {
 	public:
-		Renderer(): UIElement(UI_RENDERER) {
+		Renderer() {
 			glClearColor(m_clearClolor.x, m_clearClolor.y, m_clearClolor.z, 1.0f);
 			glEnable(GL_DEPTH_TEST);
 			glEnable(GL_CULL_FACE);
 			glCullFace(GL_FRONT);
 			glFrontFace(GL_CW);
-
-			m_pModels.reserve(20);
-			m_pShaders.reserve(5);
-			m_pCameras.reserve(10);
 		}
 		~Renderer() {
 			for (Model* model : m_pModels) {
@@ -403,7 +399,8 @@ namespace Renderer {
 		std::string m_cullFace{ "Front" };
 		std::string m_frontFace{ "Clockwise" };
 
-		virtual void OnUIRender() override {
+		/*
+		void OnUIRender() {
 			if (ImGui::TreeNode("Renderer")) {
 
 				ImGui::Text(std::format("Model count: {}", m_pModels.size()).c_str());
@@ -487,5 +484,6 @@ namespace Renderer {
 				ImGui::TreePop();
 			}
 		}
+		*/
 	};
 }

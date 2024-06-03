@@ -11,13 +11,24 @@
 #include "UI.hpp"
 
 
-class App: UIElement {
+class App {
 public:
-	App() : UIElement(UI_DEBUG) {
-		
+	App() {
+		m_UIManager.InitImGui(window.GetWindowPtr());
+		m_renderer.CreateShader("Posterizing shader", "Resources/Shaders/Basic");
+		m_renderer.CreateCamera("Main", 90.0f, true);
+
+		auto cube = m_renderer.CreateModel("Cube0", "Resources/Models/Cube.ply", "Resources/Textures/pop_cat.png");
+		cube->position = glm::vec3(-1.5f, 0.0f, 0.0f);
+		cube->rotation = glm::vec3(70.0f, 0.0f, 135.0f);
+
+		auto cube1 = m_renderer.CreateModel("Cube1", "Resources/Models/Cube.ply", "Resources/Textures/pop_cat.png");
+
+		//Why?
+		m_UIManager.RegisterElement(OnUIRender, "App");
 	};
+
 	~App() {
-		UIManager::Free();
 	};
 
 	App(const App&) = delete;
@@ -32,13 +43,14 @@ private:
 
 	Renderer::Renderer m_renderer;
 	Profiler::Profiler m_profiler;
+	UIManager::UIManager m_UIManager;
 
 	std::filesystem::path currentFilePath = std::filesystem::current_path();
 
 	std::string modelPath{ " " };
 	std::string diffuseTexturePath{ " " };
 
-	virtual void OnUIRender() override {
+	void OnUIRender() {
 		if (ImGui::TreeNode("App")) {
 
 			static char name[32];
@@ -89,11 +101,11 @@ private:
 					DEBUGPRINT("Objec name is NULL");
 				}
 				else {
-					m_renderer.CreateModel(name, modelPath , diffuseTexturePath);
+					m_renderer.CreateModel(name, modelPath, diffuseTexturePath);
 				}
 			}
 
-			
+
 			if (ImGui::BeginPopupModal("Object has no name", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 			{
 				ImGui::Text("Please enter object name");
@@ -119,23 +131,12 @@ private:
 };
 
 void App::Run() {
-	UIManager::Init(window.GetWindowPtr());
-
-	m_renderer.CreateShader("Posterizing shader", "Resources/Shaders/Basic");
-	m_renderer.CreateCamera("Main", 90.0f, true);
-
-	auto cube = m_renderer.CreateModel("Cube0", "Resources/Models/Cube.ply", "Resources/Textures/pop_cat.png");
-	cube->position = glm::vec3(-1.5f, 0.0f, 0.0f);
-	cube->rotation = glm::vec3(70.0f, 0.0f, 135.0f);
-
-	auto cube2 = m_renderer.CreateModel("Cube0", "Resources/Models/Cube.ply", "Resources/Textures/pop_cat.png");
-	cube2->position = glm::vec3(1.5f, 0.0f, 0.0f);
-	cube2->rotation = glm::vec3(70.0f, 0.0f, 135.0f);
-
 	while (window.ShouldRunNextFrame()) {
 		//Render all geometry with OpenGL
 		m_renderer.RenderAll();
 		//Run UI
-		UIManager::Render();
+		m_UIManager.BeginFrame();
+		m_UIManager.RenderUI();
+		m_UIManager.EndFrame();
 	}
 }

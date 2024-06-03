@@ -8,7 +8,6 @@
 #include "Dependecies/imgui/imgui.h"
 
 #include "Debug.hpp"
-#include "UIStructs.hpp"
 
 static void APIENTRY glDebugOutput(GLenum source,
     GLenum type,
@@ -57,15 +56,15 @@ static void APIENTRY glDebugOutput(GLenum source,
     std::cout << std::endl;
 }
 
-class Window: UIElement {
+class Window {
 public:
-    Window(unsigned int width, unsigned int height): UIElement(UI_DEBUG) {
+    Window(unsigned int width, unsigned int height) {
         glfwInit();
 
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
         glfwWindowHint(GLFW_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_VERSION_MINOR, 5);
-        glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+        glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
         
         m_window = glfwCreateWindow(width, height, "Engine", nullptr, nullptr);
 
@@ -73,6 +72,8 @@ public:
         glfwSwapInterval(m_swapInterval);
 
         gladLoadGL();
+
+        glViewport(0, 0, width, height);
 
         #ifdef _DEBUG
             DEBUGPRINT("OpenGL debug enabled");
@@ -112,9 +113,10 @@ public:
 private:
 	GLFWwindow* m_window;
     bool m_swapInterval = 1;
-    bool m_decorated = 0;
+    bool m_decorated = 1;
 
-    virtual void OnUIRender() override {
+    /*
+    void OnUIRender() {
         if(ImGui::TreeNode("Window Debug")) {
             if (ImGui::Checkbox("Lock framerate", &m_swapInterval)) {
                 glfwSwapInterval(m_swapInterval);
@@ -128,4 +130,5 @@ private:
             ImGui::TreePop();
         }
     }
+    */
 };
