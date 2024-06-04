@@ -15,15 +15,12 @@
 #include "Debug.hpp"
 #include "UI.hpp"
 
-extern ImVec2 UIManager::m_viewportSize;
-
 namespace Renderer {
 	class Shader {
 	public:
 		Shader(std::string name, std::string filePath):name(name), m_filePath(filePath) {
 			std::string tmp;
-
-			bool tmpBool;
+			bool tmpBool; //?
 
 			tmp = LoadShaderFile(m_filePath + ".vert");
 			GLuint vertexShader = CompileShader(GL_VERTEX_SHADER, tmp.c_str(), tmpBool);
@@ -244,8 +241,8 @@ namespace Renderer {
 		};
 		~Camera() {};
 
-		void UpdateMatrix() { 
-			m_projection = glm::perspective(glm::radians(Fov), (float)UIManager::m_viewportSize.x / (float)UIManager::m_viewportSize.y, 0.1f, 100.0f);
+		void UpdateMatrix(ImVec2* viewportSize) {
+			m_projection = glm::perspective(glm::radians(Fov), (float)viewportSize->x / (float)viewportSize->y, 0.1f, 100.0f);
 			m_view = glm::lookAt(position, position + glm::vec3(0.0f, 0.0f, 1.0f), Up);
 			glUniformMatrix4fv(glGetUniformLocation(static_cast<Shader*>(pCurrentShader)->GetID(), "cameraMatrix"), 1, GL_FALSE, glm::value_ptr(m_projection * m_view));
 		};
@@ -339,7 +336,7 @@ namespace Renderer {
 
 	class Renderer {
 	public:
-		Renderer() {
+		Renderer(ImVec2* vviewportSize): m_pViewportSize(vviewportSize) {
 			glClearColor(m_clearClolor.x, m_clearClolor.y, m_clearClolor.z, 1.0f);
 			glEnable(GL_DEPTH_TEST);
 			glEnable(GL_CULL_FACE);
@@ -380,7 +377,7 @@ namespace Renderer {
 		}
 
 		void RenderAll() {
-			static_cast<Camera*>(pCurrentCamera)->UpdateMatrix();
+			static_cast<Camera*>(pCurrentCamera)->UpdateMatrix(m_pViewportSize);
 
 			for (Model* model : m_pModels) {
 				model->Render();
@@ -388,7 +385,6 @@ namespace Renderer {
 		}
 
 	private:
-
 		std::vector<Model*> m_pModels;
 		std::vector<Camera*> m_pCameras;
 		std::vector<Shader*> m_pShaders;
@@ -398,6 +394,8 @@ namespace Renderer {
 
 		std::string m_cullFace{ "Front" };
 		std::string m_frontFace{ "Clockwise" };
+
+		ImVec2* m_pViewportSize;
 
 		/*
 		void OnUIRender() {

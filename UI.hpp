@@ -11,20 +11,27 @@
 #include "Dependecies/imgui/imgui_impl_opengl3.h"
 
 namespace UIManager {
+	class UIElement {
+	public:
+		UIElement() {};
+		~UIElement() {};
 
-	ImVec2 m_viewportSize{ 100.0f, 100.0f };
+		void* GetUIElementPtr() { return this; };
+
+		virtual void OnUIRender() = 0;
+	private:
+	};
 
 	struct UIWindow {
 		UIWindow(std::string name) : windowName(name) {};
-
-		std::vector<void (*)()> pUIFunctions;
+		std::vector<void*> pUIElements;
 		std::string windowName;
 		bool enabled{ true };
 	};
 
 	class UIManager { 
 	public:
-		UIManager() {
+		UIManager(ImVec2* viewportSize): m_pViewportSize(viewportSize) {
 			glGenFramebuffers(1, &m_frameBuffer);
 			glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
 
@@ -37,8 +44,8 @@ namespace UIManager {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_frameBufferTexture, 0);
 		}
-		~UIManager() {
-			//Free all resources
+
+		~UIManager() { //Free all resources
 			glDeleteTextures(1, &m_frameBufferTexture);
 			glDeleteFramebuffers(1, &m_frameBuffer);
 
@@ -66,8 +73,7 @@ namespace UIManager {
 			ImGui_ImplOpenGL3_Init("#version 450");
 		}
 
-		void RegisterElement(void (*func)(), std::string windowName) {
-
+		void RegisterElement(void* element, std::string windowName) {
 			if (m_UIWindows.size() == 0) {
 				m_UIWindows.push_back(UIWindow{windowName});
 				DEBUGPRINT("Size 0");
@@ -86,9 +92,10 @@ namespace UIManager {
 				DEBUGPRINT("Pushed in not yet existing window:" << windowName);
 			}
 
+			//Why no worky
 			for (UIWindow window : m_UIWindows) {
 				if (window.windowName == windowName) {
-					window.pUIFunctions.push_back(func);
+					window.pUIElements.push_back(element);
 					DEBUGPRINT("Found existing window: " << windowName << " and function ptr has been pushed in");
 				}
 			}
@@ -107,42 +114,42 @@ namespace UIManager {
 		}
 
 		void RenderUI() {   //Render all UI
-			ImGui::DockSpaceOverViewport();
-
-			/*
 			if (ImGui::BeginMainMenuBar()) {
-				if (ImGui::BeginMenu("File"))
-				{
-					if (ImGui::MenuItem("Exit")) { glfwSetWindowShouldClose(pCurrentWindow, true); }
+				if (ImGui::BeginMenu("File")) {
+					if (ImGui::MenuItem("Exit")) { glfwSetWindowShouldClose(m_pCurrentWindow, true); }
 					ImGui::EndMenu();
 				}
-				if (ImGui::BeginMenu("Windows"))
-				{
-					ImGui::Checkbox("Debug", &debugWindow);
-					ImGui::Checkbox("Profiler", &profilerWindow);
-					ImGui::Checkbox("Models", &modelWindow);
-					ImGui::Checkbox("Viewport", &viewportWindow);
-					ImGui::Checkbox("Renderer", &rendererWindow);
-					ImGui::Checkbox("ImGui Demo Window", &demoWindow);
-
+				if (ImGui::BeginMenu("Windows")) {
+					for (UIWindow window : m_UIWindows) {
+						ImGui::Checkbox(window.windowName.c_str(), &window.enabled);
+					}
 					ImGui::EndMenu();
 				}
 				ImGui::EndMainMenuBar();
 			}
-			*/
 
-				ImGui::Begin("Viewport");
-				ImGui::BeginChild("Viewport");
+			ImGui::DockSpaceOverViewport();
 
-				m_viewportSize = ImGui::GetWindowSize();
-
-				glBindTexture(GL_TEXTURE_2D, m_frameBufferTexture);
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (GLsizei)m_viewportSize.x, (GLsizei)m_viewportSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-				ImGui::Image(*(ImTextureID*)&m_frameBufferTexture, m_viewportSize, ImVec2(0, 1), ImVec2(1, 0));
-
-				ImGui::EndChild();
+			for (UIWindow window : m_UIWindows) {
+				ImGui::Begin(window.windowName.c_str(), &window.enabled);
+				for (void* element : window.pUIElements) {
+					DEBUGPRINT("Callint ui func");
+					static_cast<UIElement*>(element)->OnUIRender();
+				}
 				ImGui::End();
+			}
 			
+			ImGui::Begin("Viewport");
+			ImGui::BeginChild("Viewport");
+
+			*m_pViewportSize = ImGui::GetWindowSize();
+
+			glBindTexture(GL_TEXTURE_2D, m_frameBufferTexture);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (GLsizei)m_pViewportSize->x, (GLsizei)m_pViewportSize->y, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+			ImGui::Image(*(ImTextureID*)&m_frameBufferTexture, *m_pViewportSize, ImVec2(0, 1), ImVec2(1, 0));
+
+			ImGui::EndChild();
+			ImGui::End();
 		}
 
 		void EndFrame() {   //Render UI
@@ -155,7 +162,7 @@ namespace UIManager {
 			glfwMakeContextCurrent(backup_current_context);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
-			glViewport(0, 0, (GLsizei)m_viewportSize.x, (GLsizei)m_viewportSize.y);
+			glViewport(0, 0, (GLsizei)m_pViewportSize->x, (GLsizei)m_pViewportSize->y);
 		}
 
 	private:
@@ -165,5 +172,7 @@ namespace UIManager {
 		GLuint m_frameBufferTexture;
 
 		std::vector<UIWindow> m_UIWindows;
+
+		ImVec2* m_pViewportSize;
 	};
 }

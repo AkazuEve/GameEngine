@@ -10,8 +10,7 @@
 #include "Profiler.hpp"
 #include "UI.hpp"
 
-
-class App {
+class App: UIManager::UIElement {
 public:
 	App() {
 		m_UIManager.InitImGui(window.GetWindowPtr());
@@ -24,8 +23,7 @@ public:
 
 		auto cube1 = m_renderer.CreateModel("Cube1", "Resources/Models/Cube.ply", "Resources/Textures/pop_cat.png");
 
-		//Why?
-		m_UIManager.RegisterElement(OnUIRender, "App");
+		m_UIManager.RegisterElement(this->GetUIElementPtr(), "App");
 	};
 
 	~App() {
@@ -41,18 +39,19 @@ private:
 	unsigned int HEIGHT = (unsigned int)(1080 * 0.9);
 	Window window{ WIDTH, HEIGHT };
 
-	Renderer::Renderer m_renderer;
+	Renderer::Renderer m_renderer{ &viewportResolusion };
+	UIManager::UIManager m_UIManager{ &viewportResolusion };
 	Profiler::Profiler m_profiler;
-	UIManager::UIManager m_UIManager;
 
 	std::filesystem::path currentFilePath = std::filesystem::current_path();
 
 	std::string modelPath{ " " };
 	std::string diffuseTexturePath{ " " };
 
-	void OnUIRender() {
-		if (ImGui::TreeNode("App")) {
+	ImVec2 viewportResolusion{ 100, 100 };
 
+	virtual void OnUIRender() override {
+		if (ImGui::TreeNode("App")) {
 			static char name[32];
 
 			ImGui::InputText("Object name", name, IM_ARRAYSIZE(name));
@@ -70,7 +69,6 @@ private:
 						DEBUGPRINT("Model path set to" << modelPath);
 					}
 				}
-
 				ImGui::EndPopup();
 			}
 
@@ -104,7 +102,6 @@ private:
 					m_renderer.CreateModel(name, modelPath, diffuseTexturePath);
 				}
 			}
-
 
 			if (ImGui::BeginPopupModal("Object has no name", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 			{
