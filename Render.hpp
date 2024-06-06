@@ -334,10 +334,10 @@ namespace Renderer {
 		glm::vec3 scale   { 1.0f };
 	};
 
-	class Renderer {
+	class Renderer: UIManager::UIElement {
 	public:
 		Renderer(ImVec2* vviewportSize): m_pViewportSize(vviewportSize) {
-			glClearColor(m_clearClolor.x, m_clearClolor.y, m_clearClolor.z, 1.0f);
+			//glClearColor(m_clearClolor.x, m_clearClolor.y, m_clearClolor.z, 1.0f);
 			glEnable(GL_DEPTH_TEST);
 			glEnable(GL_CULL_FACE);
 			glCullFace(GL_FRONT);
@@ -397,8 +397,7 @@ namespace Renderer {
 
 		ImVec2* m_pViewportSize;
 
-		/*
-		void OnUIRender() {
+		virtual void OnUIRender() override {
 			if (ImGui::TreeNode("Renderer")) {
 
 				ImGui::Text(std::format("Model count: {}", m_pModels.size()).c_str());
@@ -482,6 +481,5 @@ namespace Renderer {
 				ImGui::TreePop();
 			}
 		}
-		*/
 	};
 }

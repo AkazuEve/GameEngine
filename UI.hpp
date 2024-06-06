@@ -102,12 +102,14 @@ namespace UIManager {
 				DEBUGPRINT("Pushed in not yet existing window:" << windowName);
 			}
 			
-			//Why no worky
+			//It worky now
 			for (unsigned int i{ 0 }; i < m_UIWindows.size(); i++) {
 				if (m_UIWindows[i].windowName == windowName) {
-					m_UIWindows[i].element[m_UIWindows[i].elementCount] = element;
-					m_UIWindows[i].elementCount++;
-					DEBUGPRINT("Found existing window: " << windowName << " and function ptr has been pushed in");
+					if (!(m_UIWindows[i].elementCount >= 10)) {
+						m_UIWindows[i].element[m_UIWindows[i].elementCount] = element;
+						m_UIWindows[i].elementCount++;
+						DEBUGPRINT("Found existing window: " << windowName << " and function ptr has been pushed in");
+					}
 				}
 			}
 		}
@@ -131,8 +133,8 @@ namespace UIManager {
 					ImGui::EndMenu();
 				}
 				if (ImGui::BeginMenu("Windows")) {
-					for (UIWindow window : m_UIWindows) {
-						ImGui::Checkbox(window.windowName.c_str(), &window.enabled);
+					for (int i{ 0 }; i < m_UIWindows.size(); i++) {
+						ImGui::Checkbox(m_UIWindows[i].windowName.c_str(), &m_UIWindows[i].enabled);
 					}
 					ImGui::EndMenu();
 				}
@@ -142,11 +144,13 @@ namespace UIManager {
 			ImGui::DockSpaceOverViewport();
 
 			for (UIWindow window : m_UIWindows) {
-				ImGui::Begin(window.windowName.c_str());
-				for (int x{ 0 }; x < window.elementCount; x++) {
-					window.element[x]->OnUIRender();
+				if (window.enabled) {
+					ImGui::Begin(window.windowName.c_str());
+					for (int i{ 0 }; i < window.elementCount; i++) {
+						window.element[i]->OnUIRender();
+						ImGui::End();
+					}
 				}
-				ImGui::End();
 			}
 			
 			ImGui::Begin("Viewport");
