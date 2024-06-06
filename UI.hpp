@@ -16,15 +16,30 @@ namespace UIManager {
 		UIElement() {};
 		~UIElement() {};
 
-		void* GetUIElementPtr() { return this; };
+		UIElement* GetUIElementPtr() { return this; };
 
 		virtual void OnUIRender() = 0;
 	private:
 	};
 
+	/*
+	template <typename T, size_t Size>
+	struct StackBuffer {
+	public:
+		Buffer() {};
+		~Buffer() {};
+
+	private:
+		T* m_pData[Size];
+	};
+	*/
+
 	struct UIWindow {
-		UIWindow(std::string name) : windowName(name) {};
-		std::vector<void*> pUIElements;
+		UIWindow(std::string name) : windowName(name) { };
+
+		UIElement* element[10];
+		unsigned int elementCount = 0;
+		
 		std::string windowName;
 		bool enabled{ true };
 	};
@@ -37,7 +52,7 @@ namespace UIManager {
 
 			glGenTextures(1, &m_frameBufferTexture);
 			glBindTexture(GL_TEXTURE_2D, m_frameBufferTexture);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1920, 1080, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, viewportSize->x, viewportSize->y, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -73,12 +88,7 @@ namespace UIManager {
 			ImGui_ImplOpenGL3_Init("#version 450");
 		}
 
-		void RegisterElement(void* element, std::string windowName) {
-			if (m_UIWindows.size() == 0) {
-				m_UIWindows.push_back(UIWindow{windowName});
-				DEBUGPRINT("Size 0");
-			}
-
+		void RegisterElement(UIElement* element, std::string windowName) {
 			bool foundWindow = false;
 			for (UIWindow window : m_UIWindows) {
 				if (window.windowName == windowName) {
@@ -91,11 +101,12 @@ namespace UIManager {
 				m_UIWindows.push_back(windowName);
 				DEBUGPRINT("Pushed in not yet existing window:" << windowName);
 			}
-
+			
 			//Why no worky
-			for (UIWindow window : m_UIWindows) {
-				if (window.windowName == windowName) {
-					window.pUIElements.push_back(element);
+			for (unsigned int i{ 0 }; i < m_UIWindows.size(); i++) {
+				if (m_UIWindows[i].windowName == windowName) {
+					m_UIWindows[i].element[m_UIWindows[i].elementCount] = element;
+					m_UIWindows[i].elementCount++;
 					DEBUGPRINT("Found existing window: " << windowName << " and function ptr has been pushed in");
 				}
 			}
@@ -131,10 +142,9 @@ namespace UIManager {
 			ImGui::DockSpaceOverViewport();
 
 			for (UIWindow window : m_UIWindows) {
-				ImGui::Begin(window.windowName.c_str(), &window.enabled);
-				for (void* element : window.pUIElements) {
-					DEBUGPRINT("Callint ui func");
-					static_cast<UIElement*>(element)->OnUIRender();
+				ImGui::Begin(window.windowName.c_str());
+				for (int x{ 0 }; x < window.elementCount; x++) {
+					window.element[x]->OnUIRender();
 				}
 				ImGui::End();
 			}

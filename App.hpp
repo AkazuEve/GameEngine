@@ -23,11 +23,10 @@ public:
 
 		auto cube1 = m_renderer.CreateModel("Cube1", "Resources/Models/Cube.ply", "Resources/Textures/pop_cat.png");
 
-		m_UIManager.RegisterElement(this->GetUIElementPtr(), "App");
+		m_UIManager.RegisterElement(GetUIElementPtr(), "App");
 	};
 
-	~App() {
-	};
+	~App() = default;
 
 	App(const App&) = delete;
 	App operator=(const App&) = delete;
@@ -48,12 +47,11 @@ private:
 	std::string modelPath{ " " };
 	std::string diffuseTexturePath{ " " };
 
-	ImVec2 viewportResolusion{ 100, 100 };
+	ImVec2 viewportResolusion{ (float)WIDTH, (float)HEIGHT };
 
 	virtual void OnUIRender() override {
 		if (ImGui::TreeNode("App")) {
 			static char name[32];
-
 			ImGui::InputText("Object name", name, IM_ARRAYSIZE(name));
 
 			if (ImGui::Button("Choose model")) {
@@ -72,7 +70,6 @@ private:
 				ImGui::EndPopup();
 			}
 
-
 			if (ImGui::Button("Choose diffuse texture")) {
 				ImGui::OpenPopup("diffuse_path");
 			}
@@ -86,7 +83,6 @@ private:
 						DEBUGPRINT("Diffuse path set to" << diffuseTexturePath);
 					}
 				}
-
 				ImGui::EndPopup();
 			}
 
