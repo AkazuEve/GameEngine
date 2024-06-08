@@ -289,8 +289,6 @@ namespace Renderer {
 	private:
 		Mesh m_mesh;
 		Texture2D m_diffuseTexture;
-		bool m_isRendered{ true };
-		std::string m_name;
 		glm::mat4 m_modelMatrix{ 1.0f };
 
 		void UpdateMatrix() {
@@ -304,45 +302,31 @@ namespace Renderer {
 
 			m_modelMatrix = glm::scale(m_modelMatrix, scale);
 		}
-		/*
-		void OnUIRender() {
-			if (ImGui::TreeNode(m_name.c_str()))
-			{
-				ImGui::Checkbox("Is rendered", &m_isRendered);
-
-				if (ImGui::TreeNode("Transform")) {
-					ImGui::DragFloat3("Position", &position.x, 0.1f, -100.0f, 100.0f);
-					ImGui::DragFloat3("Rotation", &rotation.x, 0.1f, -180.0f, 180.0f);
-					ImGui::DragFloat3("Scale", &scale.x, 0.1f, -10.0f, 10.0f);
-
-					if (ImGui::Button("Restet Transform")) {
-						position = glm::vec3(0.0f);
-						rotation = glm::vec3(0.0f);
-						scale = glm::vec3(1.0f);
-					}
-
-					ImGui::TreePop();
-				}
-				ImGui::TreePop();
-			}
-		}
-		*/
 
 	public:
 		glm::vec3 position{ 0.0f };
 		glm::vec3 rotation{ 0.0f };
 		glm::vec3 scale   { 1.0f };
+
+		bool m_isRendered{ true };
+		std::string m_name;
 	};
 
 	class Renderer: UIManager::UIElement {
 	public:
 		Renderer(ImVec2* vviewportSize): m_pViewportSize(vviewportSize) {
-			//glClearColor(m_clearClolor.x, m_clearClolor.y, m_clearClolor.z, 1.0f);
+			glClearColor(m_clearClolor.x, m_clearClolor.y, m_clearClolor.z, 1.0f);
+
 			glEnable(GL_DEPTH_TEST);
+			glDepthFunc(GL_LESS);
 			glEnable(GL_CULL_FACE);
+
 			glCullFace(GL_FRONT);
 			glFrontFace(GL_CW);
+
+			UIManager::RegisterElement(GetUIElementPtr(), "Renderer", true);
 		}
+
 		~Renderer() {
 			for (Model* model : m_pModels) {
 				delete model;
@@ -358,19 +342,22 @@ namespace Renderer {
 		Renderer(const Renderer&) = delete;
 		Renderer operator=(const Renderer&) = delete;
 
-		Model* CreateModel(std::string name, std::string meshPath, std::string texturePath) {
+		template<typename Model>
+		Model* CreateObject(std::string name, std::string meshPath, std::string texturePath) {
 			Model* newModel = new Model(name, meshPath, texturePath);
 			m_pModels.push_back(newModel);
 			return newModel;
 		}
 
-		Camera* CreateCamera(std::string name, float fov, bool isActive) {
+		template<typename Camera>
+		Camera* CreateObject(std::string name, float fov, bool isActive) {
 			Camera* newCamera = new Camera(name, fov, isActive);
 			m_pCameras.push_back(newCamera);
 			return newCamera;
 		}
-		
-		Shader* CreateShader(std::string name, std::string filePath) {
+
+		template<typename Shader>
+		Shader* CreateObject(std::string name, std::string filePath) {
 			Shader* newShader = new Shader(name, filePath);
 			m_pShaders.push_back(newShader);
 			return newShader;
@@ -378,6 +365,9 @@ namespace Renderer {
 
 		void RenderAll() {
 			static_cast<Camera*>(pCurrentCamera)->UpdateMatrix(m_pViewportSize);
+
+			glClear(GL_COLOR_BUFFER_BIT); 
+			glClear(GL_DEPTH_BUFFER_BIT); 
 
 			for (Model* model : m_pModels) {
 				model->Render();
@@ -391,93 +381,161 @@ namespace Renderer {
 
 		glm::vec3 m_clearClolor{ 0.5f, 0.5f, 0.5f };
 		bool m_cullFaceEnable{ true };
+		bool m_depthTestEnable{ true };
 
 		std::string m_cullFace{ "Front" };
 		std::string m_frontFace{ "Clockwise" };
+		std::string m_depthTest{ "Less" };
 
 		ImVec2* m_pViewportSize;
 
 		virtual void OnUIRender() override {
-			if (ImGui::TreeNode("Renderer")) {
+			ImGui::Text(std::format("Model count: {}", m_pModels.size()).c_str());
 
-				ImGui::Text(std::format("Model count: {}", m_pModels.size()).c_str());
+			if (ImGui::Checkbox("Face culling", &m_cullFaceEnable)) {
+				switch (m_cullFaceEnable) {
+				case true:
+					glEnable(GL_CULL_FACE);
+					break;
+				case false:
+					glDisable(GL_CULL_FACE);
+					break;
+				}
+			}
+			if (ImGui::Button("Culling options")) {
+				ImGui::OpenPopup("culling_options");
+			}
+			ImGui::SameLine();
+			ImGui::Text(std::format("Culling: {} {}", m_cullFace, m_frontFace).c_str());
+			if (ImGui::BeginPopup("culling_options")) {
 
-				if (ImGui::Checkbox("Face culling", &m_cullFaceEnable)) {
-					switch (m_cullFaceEnable) {
-					case true:
-						glEnable(GL_CULL_FACE);
-						break;
-					case false:
-						glDisable(GL_CULL_FACE);
-						break;
-					}
+				if (ImGui::Button("Cull face front")) {
+					glCullFace(GL_FRONT);
+					m_cullFace = "Front";
+				}
+				if (ImGui::Button("Cull face back")) {
+					glCullFace(GL_BACK);
+					m_cullFace = "Back";
+				}
+				if (ImGui::Button("Culling clockwise")) {
+					glFrontFace(GL_CW);
+					m_frontFace = "Clockwise";
+				}
+				if (ImGui::Button("Culling counterclockwise")) {
+					glFrontFace(GL_CCW);
+					m_frontFace = "Counterclockwise";
+				}
+				ImGui::EndPopup();
+			}
+
+			if (ImGui::Checkbox("Depth test", &m_depthTestEnable)) {
+				switch (m_cullFaceEnable) {
+				case true:
+					glEnable(GL_DEPTH_TEST);
+					break;
+				case false:
+					glDisable(GL_DEPTH_TEST);
+					break;
+				}
+			}
+			if (ImGui::Button("Depth test options")) {
+				ImGui::OpenPopup("depth_test_options");
+			}
+			ImGui::SameLine();
+			ImGui::Text(std::format("Depth test func: {}", m_depthTest).c_str());
+			if (ImGui::BeginPopup("depth_test_options")) {
+
+				if (ImGui::Button("Always")) {
+					m_depthTest = "Always";
+					glDepthFunc(GL_ALWAYS);
+				}
+				if (ImGui::Button("Never")) {
+					m_depthTest = "Never";
+					glDepthFunc(GL_NEVER);
+				}
+				if (ImGui::Button("Less")) {
+					m_depthTest = "Less";
+					glDepthFunc(GL_LESS);
+				}
+				if (ImGui::Button("Equal")) {
+					m_depthTest = "Equal";
+					glDepthFunc(GL_EQUAL);
+				}
+				if (ImGui::Button("Less or Equal")) {
+					m_depthTest = "Less or Equal";
+					glDepthFunc(GL_LEQUAL);
+				}
+				if (ImGui::Button("Greater or Equal")) {
+					m_depthTest = "Greater or Equal";
+					glDepthFunc(GL_GEQUAL);
+				}
+				if (ImGui::Button("Greater")) {
+					m_depthTest = "Greater";
+					glDepthFunc(GL_GREATER);
+				}
+				if (ImGui::Button("Not Equal")) {
+					m_depthTest = "Not Equal";
+					glDepthFunc(GL_NOTEQUAL);
 				}
 
-				if (ImGui::Button("Culling options")) {
-					ImGui::OpenPopup("culling_options");
+				ImGui::EndPopup();
+			}
+
+			if (ImGui::TreeNode("Cameras")) {
+				for (Camera* camera : m_pCameras) {
+					if (ImGui::TreeNode(camera->name.c_str())) {
+						ImGui::DragFloat3("Position", &camera->position.x, 0.1f, -100.0f, 100.0f);
+						ImGui::DragFloat("FOV", &camera->Fov, 0.1f, 10.0f, 180.0f);
+
+						if (ImGui::Button("Use")) {
+							pCurrentCamera = static_cast<void*>(camera);
+						}
+						ImGui::TreePop();
+					}
 				}
-				if (ImGui::BeginPopup("culling_options")) {
+				ImGui::TreePop();
+			}
 
-					if (ImGui::Button("Cull face front")) {
-						glCullFace(GL_FRONT);
-						m_cullFace = "Front";
+			if (ImGui::TreeNode("Shaders")) {
+				for (Shader* shader : m_pShaders) {
+					if (ImGui::TreeNode(shader->name.c_str())) {
+						ImGui::Text(std::format("ID: {}", shader->GetID()).c_str());
+						if (ImGui::Button("Hot reload")) {
+							shader->HotReload();
+						}
+						ImGui::TreePop();
 					}
-					if (ImGui::Button("Cull face back")) {
-						glCullFace(GL_BACK);
-						m_cullFace = "Back";
-					}
-					if (ImGui::Button("Culling clockwise")) {
-						glFrontFace(GL_CW);
-						m_frontFace = "Clockwise";
-					}
-					if (ImGui::Button("Culling counterclockwise")) {
-						glFrontFace(GL_CCW);
-						m_frontFace = "Counterclockwise";
-					}
-					ImGui::EndPopup();
 				}
+				ImGui::TreePop();
+			}
 
-				ImGui::SameLine();
-				ImGui::Text(std::format("Culling: {} {}", m_cullFace, m_frontFace).c_str());
+			if (ImGui::TreeNode("Shader settings")) {
+				if (ImGui::ColorPicker3("Clear color", &m_clearClolor.x)) {
+					glClearColor(m_clearClolor.x, m_clearClolor.y, m_clearClolor.z, 1.0f);
+				}
+				ImGui::TreePop();
+			}
 
-				if (ImGui::TreeNode("Cameras")) {
-					for (Camera* camera : m_pCameras) {
-						if (ImGui::TreeNode(camera->name.c_str())) {
-							ImGui::DragFloat3("Position", &camera->position.x, 0.1f, -100.0f, 100.0f);
-							ImGui::DragFloat("FOV", &camera->Fov, 0.1f, 10.0f, 180.0f);
+			if (ImGui::TreeNode("Models")) {
+				for (Model* model : m_pModels) {
+					if (ImGui::TreeNode(model->m_name.c_str())) {
+						ImGui::Checkbox("Is rendered", &model->m_isRendered);
+						if (ImGui::TreeNode("Transform")) {
+							ImGui::DragFloat3("Position", &model->position.x, 0.1f, -100.0f, 100.0f);
+							ImGui::DragFloat3("Rotation", &model->rotation.x, 0.1f, -180.0f, 180.0f);
+							ImGui::DragFloat3("Scale", &model->scale.x, 0.1f, -10.0f, 10.0f);
 
-							if (ImGui::Button("Use")) {
-								pCurrentCamera = static_cast<void*>(camera);
+							if (ImGui::Button("Restet Transform")) {
+								model->position = glm::vec3(0.0f);
+								model->rotation = glm::vec3(0.0f);
+								model->scale = glm::vec3(1.0f);
 							}
+
 							ImGui::TreePop();
 						}
+						ImGui::TreePop();
 					}
-					ImGui::TreePop();
 				}
-
-				if (ImGui::TreeNode("Shaders")) {
-					for (Shader* shader : m_pShaders) {
-						if (ImGui::TreeNode(shader->name.c_str())) {
-							
-							ImGui::Text(std::format("ID: {}", shader->GetID()).c_str());
-
-							if (ImGui::Button("Hot reload")) {
-								shader->HotReload();
-							}
-
-							ImGui::TreePop();
-						}
-					}
-					ImGui::TreePop();
-				}
-
-				if (ImGui::TreeNode("Shader settings")) {
-					if (ImGui::ColorPicker3("Clear color", &m_clearClolor.x)) {
-						glClearColor(m_clearClolor.x, m_clearClolor.y, m_clearClolor.z, 1.0f);
-					}
-					ImGui::TreePop();
-				}
-
 				ImGui::TreePop();
 			}
 		}

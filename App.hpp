@@ -13,17 +13,20 @@
 class App: UIManager::UIElement {
 public:
 	App() {
-		m_UIManager.InitImGui(window.GetWindowPtr());
-		m_renderer.CreateShader("Posterizing shader", "Resources/Shaders/Basic");
-		m_renderer.CreateCamera("Main", 90.0f, true);
+		UIManager::InitImGui(window.GetWindowPtr(), &viewportResolusion);
+		m_renderer.CreateObject<Renderer::Shader>("Posterizing shader", "Resources/Shaders/Basic");
+		m_renderer.CreateObject<Renderer::Camera>("Main", 90.0f, true);
 
-		auto cube = m_renderer.CreateModel("Cube0", "Resources/Models/Cube.ply", "Resources/Textures/pop_cat.png");
-		cube->position = glm::vec3(-1.5f, 0.0f, 0.0f);
+		auto cube1 = m_renderer.CreateObject<Renderer::Model>("Cube1", "Resources/Models/Cube.ply", "Resources/Textures/pop_cat.png");
+		cube1->position = glm::vec3(0.0f, 0.0f, -1.5f);
+
+		auto cube = m_renderer.CreateObject<Renderer::Model>("Cube0", "Resources/Models/Cube.ply", "Resources/Textures/pop_cat.png");
+		cube->position = glm::vec3(0.0f, 0.0f, 12.0f);
 		cube->rotation = glm::vec3(70.0f, 0.0f, 135.0f);
+		cube->scale = glm::vec3(3.0f);
 
-		auto cube1 = m_renderer.CreateModel("Cube1", "Resources/Models/Cube.ply", "Resources/Textures/pop_cat.png");
 
-		m_UIManager.RegisterElement(GetUIElementPtr(), "App");
+		UIManager::RegisterElement(GetUIElementPtr(), "App", true);
 	};
 
 	~App() = default;
@@ -39,7 +42,6 @@ private:
 	Window window{ WIDTH, HEIGHT };
 
 	Renderer::Renderer m_renderer{ &viewportResolusion };
-	UIManager::UIManager m_UIManager{ &viewportResolusion };
 	Profiler::Profiler m_profiler;
 
 	std::filesystem::path currentFilePath = std::filesystem::current_path();
@@ -95,7 +97,7 @@ private:
 					DEBUGPRINT("Objec name is NULL");
 				}
 				else {
-					m_renderer.CreateModel(name, modelPath, diffuseTexturePath);
+					m_renderer.CreateObject<Renderer::Model>(name, modelPath, diffuseTexturePath);
 				}
 			}
 
@@ -108,7 +110,7 @@ private:
 				if (name[0] != NULL) {
 					if (ImGui::Button("OK", ImVec2(120, 0))) {
 						ImGui::CloseCurrentPopup();
-						m_renderer.CreateModel(name, modelPath, diffuseTexturePath);
+						m_renderer.CreateObject<Renderer::Model>(name, modelPath, diffuseTexturePath);
 					}
 					ImGui::SameLine();
 					if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
@@ -128,8 +130,8 @@ void App::Run() {
 		//Render all geometry with OpenGL
 		m_renderer.RenderAll();
 		//Run UI
-		m_UIManager.BeginFrame();
-		m_UIManager.RenderUI();
-		m_UIManager.EndFrame();
+		UIManager::BeginFrame();
+		UIManager::RenderUI();
+		UIManager::EndFrame();
 	}
 }
