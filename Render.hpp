@@ -244,8 +244,8 @@ namespace Renderer {
 		};
 		~Camera() {};
 
-		void UpdateMatrix(ImVec2* viewportSize) {
-			m_projection = glm::perspective(glm::radians(Fov), (float)viewportSize->x / (float)viewportSize->y, 0.1f, 100.0f);
+		void UpdateMatrix(ImVec2 viewportSize) {
+			m_projection = glm::perspective(glm::radians(Fov), (float)viewportSize.x / (float)viewportSize.y, 0.1f, 100.0f);
 			m_view = glm::lookAt(position, position + glm::vec3(0.0f, 0.0f, 1.0f), Up);
 			glUniformMatrix4fv(glGetUniformLocation(static_cast<Shader*>(pCurrentShader)->GetID(), "cameraMatrix"), 1, GL_FALSE, glm::value_ptr(m_projection * m_view));
 		};
@@ -317,7 +317,7 @@ namespace Renderer {
 
 	class Renderer: UIManager::UIElement {
 	public:
-		Renderer(ImVec2* vviewportSize): m_pViewportSize(vviewportSize) {
+		Renderer(ImVec2* viewportSize) {
 			glClearColor(m_clearClolor.x, m_clearClolor.y, m_clearClolor.z, 1.0f);
 
 			glEnable(GL_DEPTH_TEST);
@@ -327,10 +327,41 @@ namespace Renderer {
 			glCullFace(GL_FRONT);
 			glFrontFace(GL_CW);
 
+
+			glGenFramebuffers(1, &m_frameBuffer);
+			glGenTextures(1, &m_frameBufferColorTexture);
+			glGenTextures(1, &m_frameBufferDepthTexture);
+
+			glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+
+			glBindTexture(GL_TEXTURE_2D, m_frameBufferColorTexture);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 100, 100, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+			glBindTexture(GL_TEXTURE_2D, m_frameBufferDepthTexture);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, 100, 100, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_frameBufferColorTexture, 0);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_frameBufferDepthTexture, 0);
+
+			glBindTexture(GL_TEXTURE_2D, 0);
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 			UIManager::RegisterElement(this, "Renderer", true);
 		}
 
 		~Renderer() {
+			glDeleteTextures(1, &m_frameBufferColorTexture);
+			glDeleteTextures(1, &m_frameBufferDepthTexture);
+			glDeleteFramebuffers(1, &m_frameBuffer);
+
 			for (Model* model : m_pModels) {
 				delete model;
 			}
@@ -345,11 +376,11 @@ namespace Renderer {
 		Renderer(const Renderer&) = delete;
 		Renderer operator=(const Renderer&) = delete;
 
-		template<typename Model>
-		Model* CreateObject(std::string name, std::string meshPath, std::string texturePath) {
-			Model* newModel = new Model(name, meshPath, texturePath);
-			m_pModels.push_back(newModel);
-			return newModel;
+		template<typename Shader>
+		Shader* CreateObject(std::string name, std::string filePath) {
+			Shader* newShader = new Shader(name, filePath);
+			m_pShaders.push_back(newShader);
+			return newShader;
 		}
 
 		template<typename Camera>
@@ -359,18 +390,27 @@ namespace Renderer {
 			return newCamera;
 		}
 
-		template<typename Shader>
-		Shader* CreateObject(std::string name, std::string filePath) {
-			Shader* newShader = new Shader(name, filePath);
-			m_pShaders.push_back(newShader);
-			return newShader;
+		template<typename Model>
+		Model* CreateObject(std::string name, std::string meshPath, std::string texturePath) {
+			Model* newModel = new Model(name, meshPath, texturePath);
+			m_pModels.push_back(newModel);
+			return newModel;
 		}
 
 		void RenderAll() {
-			static_cast<Camera*>(pCurrentCamera)->UpdateMatrix(m_pViewportSize);
+			glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+			glViewport(0, 0, (GLsizei)m_pViewportSize.x, (GLsizei)m_pViewportSize.y);
 
-			glClear(GL_COLOR_BUFFER_BIT); 
-			glClear(GL_DEPTH_BUFFER_BIT); 
+			glBindTexture(GL_TEXTURE_2D, m_frameBufferColorTexture);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (GLsizei)m_pViewportSize.x, (GLsizei)m_pViewportSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+
+			glBindTexture(GL_TEXTURE_2D, m_frameBufferDepthTexture);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, (GLsizei)m_pViewportSize.x, (GLsizei)m_pViewportSize.y, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
+
+			glClear(GL_COLOR_BUFFER_BIT);
+			glClear(GL_DEPTH_BUFFER_BIT);
+
+			static_cast<Camera*>(pCurrentCamera)->UpdateMatrix(m_pViewportSize);
 
 			for (Model* model : m_pModels) {
 				model->Render();
@@ -378,6 +418,10 @@ namespace Renderer {
 		}
 
 	private:
+		GLuint m_frameBuffer;
+		GLuint m_frameBufferColorTexture;
+		GLuint m_frameBufferDepthTexture;
+
 		std::vector<Model*> m_pModels;
 		std::vector<Camera*> m_pCameras;
 		std::vector<Shader*> m_pShaders;
@@ -390,7 +434,7 @@ namespace Renderer {
 		std::string m_frontFace{ "Clockwise" };
 		std::string m_depthTest{ "Less" };
 
-		ImVec2* m_pViewportSize;
+		ImVec2 m_pViewportSize{ 100.0f ,100.0f };
 
 		virtual void OnUIRender() override {
 			ImGui::Text(std::format("Model count: {}", m_pModels.size()).c_str());
@@ -520,20 +564,23 @@ namespace Renderer {
 			}
 
 			if (ImGui::TreeNode("Models")) {
-				for (Model* model : m_pModels) {
-					if (ImGui::TreeNode(model->m_name.c_str())) {
-						ImGui::Checkbox("Is rendered", &model->m_isRendered);
+				for (unsigned int i{ 0 }; i < m_pModels.size(); i++) {
+					if (ImGui::TreeNode(m_pModels[i]->m_name.c_str())) {
+						if (ImGui::Button("Remove")) {
+							delete m_pModels[i];
+							m_pModels.erase(m_pModels.begin() + i);
+						}
+						ImGui::Checkbox("Is rendered", &m_pModels[i]->m_isRendered);
 						if (ImGui::TreeNode("Transform")) {
-							ImGui::DragFloat3("Position", &model->position.x, 0.1f, -100.0f, 100.0f);
-							ImGui::DragFloat3("Rotation", &model->rotation.x, 0.1f, -180.0f, 180.0f);
-							ImGui::DragFloat3("Scale", &model->scale.x, 0.1f, -10.0f, 10.0f);
+							ImGui::DragFloat3("Position", &m_pModels[i]->position.x, 0.1f, -100.0f, 100.0f);
+							ImGui::DragFloat3("Rotation", &m_pModels[i]->rotation.x, 0.1f, -180.0f, 180.0f);
+							ImGui::DragFloat3("Scale", &m_pModels[i]->scale.x, 0.1f, -10.0f, 10.0f);
 
 							if (ImGui::Button("Restet Transform")) {
-								model->position = glm::vec3(0.0f);
-								model->rotation = glm::vec3(0.0f);
-								model->scale = glm::vec3(1.0f);
+								m_pModels[i]->position = glm::vec3(0.0f);
+								m_pModels[i]->rotation = glm::vec3(0.0f);
+								m_pModels[i]->scale = glm::vec3(1.0f);
 							}
-
 							ImGui::TreePop();
 						}
 						ImGui::TreePop();
@@ -541,6 +588,27 @@ namespace Renderer {
 				}
 				ImGui::TreePop();
 			}
+
+			ImGui::Begin("Viewport");
+			ImGui::BeginChild("Viewport");
+
+			m_pViewportSize = ImGui::GetWindowSize();
+
+			ImGui::Image(*(ImTextureID*)&m_frameBufferColorTexture, m_pViewportSize, ImVec2(0, 1), ImVec2(1, 0));
+
+			ImGui::EndChild();
+			ImGui::End();
+
+
+			ImGui::Begin("Depth Buffer");
+			ImGui::BeginChild("Depth Buffer");
+
+			static ImVec2 bufferSize;
+			bufferSize = ImGui::GetWindowSize();
+			ImGui::Image(*(ImTextureID*)&m_frameBufferDepthTexture, bufferSize, ImVec2(0, 1), ImVec2(1, 0));
+
+			ImGui::EndChild();
+			ImGui::End();
 		}
 	};
 }

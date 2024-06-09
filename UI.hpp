@@ -35,18 +35,12 @@ namespace UIManager {
 	};
 
 	static GLFWwindow* m_pCurrentWindow = nullptr;
-
-	static GLuint m_frameBuffer;
-	static GLuint m_frameBufferColorTexture;
-	static GLuint m_frameBufferDepthTexture;
-
 	static std::vector<UIWindow> m_UIWindows;
 
 	static ImVec2* m_pViewportSize;
 
-	void InitImGui(GLFWwindow* window, ImVec2* viewportSize) {
+	void InitImGui(GLFWwindow* window) {
 		m_pCurrentWindow = window;
-		m_pViewportSize = viewportSize;
 		//Setup ImGui
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
@@ -62,39 +56,9 @@ namespace UIManager {
 
 		ImGui_ImplGlfw_InitForOpenGL(m_pCurrentWindow, true);
 		ImGui_ImplOpenGL3_Init("#version 450");
-
-		glGenFramebuffers(1, &m_frameBuffer);
-		glGenTextures(1, &m_frameBufferColorTexture);
-		glGenTextures(1, &m_frameBufferDepthTexture);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
-
-		glBindTexture(GL_TEXTURE_2D, m_frameBufferColorTexture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (GLsizei)m_pViewportSize->x, (GLsizei)m_pViewportSize->y, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-		glBindTexture(GL_TEXTURE_2D, m_frameBufferDepthTexture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, (GLsizei)m_pViewportSize->x, (GLsizei)m_pViewportSize->y, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_frameBufferColorTexture, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_frameBufferDepthTexture, 0);
-
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
 	void FreeImGui() { //Free all resources
-		glDeleteTextures(1, &m_frameBufferColorTexture);
-		glDeleteTextures(1, &m_frameBufferDepthTexture);
-		glDeleteFramebuffers(1, &m_frameBuffer);
-
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
@@ -139,7 +103,6 @@ namespace UIManager {
 		glViewport(0, 0, width, height);
 
 		glClear(GL_COLOR_BUFFER_BIT);
-		glClear(GL_DEPTH_BUFFER_BIT);
 	}
 
 	void RenderUI() {   //Render all UI
@@ -168,18 +131,6 @@ namespace UIManager {
 					ImGui::End();
 			}
 		}
-		
-		ImGui::Begin("Viewport");
-		ImGui::BeginChild("Viewport");
-
-		*m_pViewportSize = ImGui::GetWindowSize();
-
-		glBindTexture(GL_TEXTURE_2D, m_frameBufferColorTexture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (GLsizei)m_pViewportSize->x, (GLsizei)m_pViewportSize->y, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-		ImGui::Image(*(ImTextureID*)&m_frameBufferColorTexture, *m_pViewportSize, ImVec2(0, 1), ImVec2(1, 0));
-
-		ImGui::EndChild();
-		ImGui::End();
 	}
 
 	void EndFrame() {   //Render UI
@@ -190,8 +141,5 @@ namespace UIManager {
 		ImGui::UpdatePlatformWindows();
 		ImGui::RenderPlatformWindowsDefault();
 		glfwMakeContextCurrent(backup_current_context);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
-		glViewport(0, 0, (GLsizei)m_pViewportSize->x, (GLsizei)m_pViewportSize->y);
 	}
 }

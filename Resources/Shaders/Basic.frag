@@ -35,10 +35,10 @@ void main()  {
     vec4 textureSample = texture(diffuseTexture, TexCoord);
 
     vec3 hsvSample = rgb2hsv(textureSample.rgb);
-    vec3 posterizedHsv = vec3(posterize(hsvSample.x, 32), posterize(hsvSample.y, 10), posterize(hsvSample.z, 10));
+    vec3 posterizedHsv = vec3(posterize(hsvSample.x, 15), posterize(hsvSample.y, 6), posterize(hsvSample.z, 5));
 
     vec4 lightAngle = vec4(0.0, 1.0, 0.0, 1.0);
-    lightAngle = normalize(lightAngle) * model;
+    lightAngle = normalize(lightAngle * model);
 
 	FragColor = vec4(hsv2rgb(posterizedHsv), 1.0) * (max(dot(Normal, lightAngle.xyz), 0.3));
 }

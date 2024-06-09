@@ -13,7 +13,7 @@
 class App: UIManager::UIElement {
 public:
 	App() {
-		UIManager::InitImGui(window.GetWindowPtr(), &viewportResolusion);
+		UIManager::InitImGui(window.GetWindowPtr());
 		m_renderer.CreateObject<Renderer::Shader>("Posterizing shader", "Resources/Shaders/Basic");
 		m_renderer.CreateObject<Renderer::Camera>("Main", 90.0f, true);
 
