@@ -12,15 +12,13 @@ namespace Profiler {
 		Profiler() {
 			m_samples.reserve(12000);
 			for (unsigned int i{ 0 }; i < m_samples.capacity(); i++) {
-				m_samples.push_back(100.0f);
+				m_samples.push_back(0.0f);
 			}
 
-			UIManager::RegisterElement(GetUIElementPtr(), "Profiler", false);
+			UIManager::RegisterElement(this, "Profiler", false);
 		}
 
-		~Profiler() {
-
-		}
+		~Profiler() = default;
 
 	private:
 		std::vector<float> m_samples;

@@ -10,8 +10,8 @@
 #include "Dependecies/imgui/imgui.h"
 
 #include "ResourceManager.hpp"
-#include "RenderingVariables.hpp"
 #include "RenderingStructs.hpp"
+#include "RenderingVariables.hpp"
 #include "Debug.hpp"
 #include "UI.hpp"
 
@@ -256,7 +256,7 @@ namespace Renderer {
 	public:
 		std::string name{ " " };
 		float Fov = 0.0f;
-		glm::vec3 position{ 0.0f, 0.2f, -3.0f };
+		glm::vec3 position{ 0.0f, 0.0f, -3.0f };
 	};
 
 	class Model {
@@ -324,7 +324,7 @@ namespace Renderer {
 			glCullFace(GL_FRONT);
 			glFrontFace(GL_CW);
 
-			UIManager::RegisterElement(GetUIElementPtr(), "Renderer", true);
+			UIManager::RegisterElement(this, "Renderer", true);
 		}
 
 		~Renderer() {
@@ -375,6 +375,10 @@ namespace Renderer {
 		}
 
 	private:
+
+		Shader* m_pCurrentShader = nullptr;
+		Camera* m_pCurrentCamera = nullptr;
+
 		std::vector<Model*> m_pModels;
 		std::vector<Camera*> m_pCameras;
 		std::vector<Shader*> m_pShaders;

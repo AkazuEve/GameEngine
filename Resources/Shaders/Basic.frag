@@ -3,7 +3,10 @@ layout (location = 0) out vec4 FragColor;
 
 layout (binding = 0) uniform sampler2D diffuseTexture;
 
+uniform mat4 model;
+
 in vec2 TexCoord;
+in vec3 Normal;
 
 vec3 rgb2hsv(vec3 c)
 {
@@ -32,8 +35,10 @@ void main()  {
     vec4 textureSample = texture(diffuseTexture, TexCoord);
 
     vec3 hsvSample = rgb2hsv(textureSample.rgb);
-    vec3 posterizedHsv = vec3(posterize(hsvSample.x, 32), posterize(hsvSample.y, 3), posterize(hsvSample.z, 5));
+    vec3 posterizedHsv = vec3(posterize(hsvSample.x, 32), posterize(hsvSample.y, 10), posterize(hsvSample.z, 10));
 
+    vec4 lightAngle = vec4(0.0, 1.0, 0.0, 1.0);
+    lightAngle = normalize(lightAngle) * model;
 
-	FragColor = vec4(hsv2rgb(posterizedHsv), 1.0);
+	FragColor = vec4(hsv2rgb(posterizedHsv), 1.0) * (max(dot(Normal, lightAngle.xyz), 0.4));
 }

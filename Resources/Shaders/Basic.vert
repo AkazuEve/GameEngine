@@ -7,8 +7,10 @@ uniform mat4 cameraMatrix;
 uniform mat4 model;
 
 out vec2 TexCoord;
+out vec3 Normal;
 
 void main()  {
     gl_Position = cameraMatrix * model * vec4(aPosition, 1.0); 
     TexCoord = aTex;
+    Normal = aNormal;
 }

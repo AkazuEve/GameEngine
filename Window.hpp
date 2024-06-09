@@ -82,7 +82,7 @@ public:
             glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
         #endif //  DEBUG
 
-            UIManager::RegisterElement(GetUIElementPtr(), "App", true);
+            UIManager::RegisterElement(this, "App", true);
     }
     ~Window() {
         glfwDestroyWindow(m_window);

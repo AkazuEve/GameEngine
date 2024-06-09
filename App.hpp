@@ -17,16 +17,7 @@ public:
 		m_renderer.CreateObject<Renderer::Shader>("Posterizing shader", "Resources/Shaders/Basic");
 		m_renderer.CreateObject<Renderer::Camera>("Main", 90.0f, true);
 
-		auto cube1 = m_renderer.CreateObject<Renderer::Model>("Cube1", "Resources/Models/Cube.ply", "Resources/Textures/pop_cat.png");
-		cube1->position = glm::vec3(0.0f, 0.0f, -1.5f);
-
-		auto cube = m_renderer.CreateObject<Renderer::Model>("Cube0", "Resources/Models/Cube.ply", "Resources/Textures/pop_cat.png");
-		cube->position = glm::vec3(0.0f, 0.0f, 12.0f);
-		cube->rotation = glm::vec3(70.0f, 0.0f, 135.0f);
-		cube->scale = glm::vec3(3.0f);
-
-
-		UIManager::RegisterElement(GetUIElementPtr(), "App", true);
+		UIManager::RegisterElement(this, "App", true);
 	};
 
 	~App() = default;

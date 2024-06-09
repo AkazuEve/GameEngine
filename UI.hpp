@@ -16,8 +16,6 @@ namespace UIManager {
 		UIElement() {};
 		~UIElement() {};
 
-		UIElement* GetUIElementPtr() { return this; };
-
 		virtual void OnUIRender() = 0;
 	private:
 	};
