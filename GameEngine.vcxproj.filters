@@ -59,9 +59,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Window.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Dependecies\include\glad\glad.h">
       <Filter>Header Files\External</Filter>
     </ClInclude>
@@ -77,10 +74,7 @@
     <ClInclude Include="Render.hpp">
       <Filter>Header Files\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="ResourceManager.hpp">
-      <Filter>Header Files\Rendering</Filter>
-    </ClInclude>
-    <ClInclude Include="RenderingStructs.hpp">
+    <ClInclude Include="RenderingObjects.hpp">
       <Filter>Header Files\Rendering</Filter>
     </ClInclude>
     <ClInclude Include="Dependecies\imgui\imconfig.h">
@@ -110,13 +104,16 @@
     <ClInclude Include="Dependecies\imgui\imstb_truetype.h">
       <Filter>Header Files\External\ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="Profiler.hpp">
+    <ClInclude Include="UI.hpp">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="RenderingVariables.hpp">
-      <Filter>Header Files\Rendering</Filter>
+    <ClInclude Include="Profiler.hpp">
+      <Filter>Header Files\UI</Filter>
     </ClInclude>
-    <ClInclude Include="UI.hpp">
+    <ClInclude Include="Window.hpp">
       <Filter>Header Files\UI</Filter>
     </ClInclude>
   </ItemGroup>

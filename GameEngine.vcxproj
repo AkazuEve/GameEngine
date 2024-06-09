@@ -112,9 +112,8 @@
     <ClInclude Include="Dependecies\include\glad\khrplatform.h" />
     <ClInclude Include="Profiler.hpp" />
     <ClInclude Include="Render.hpp" />
-    <ClInclude Include="RenderingVariables.hpp" />
     <ClInclude Include="ResourceManager.hpp" />
-    <ClInclude Include="RenderingStructs.hpp" />
+    <ClInclude Include="RenderingObjects.hpp" />
     <ClInclude Include="UI.hpp" />
     <ClInclude Include="Window.hpp" />
   </ItemGroup>

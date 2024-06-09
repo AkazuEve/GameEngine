@@ -10,12 +10,15 @@
 #include "Dependecies/imgui/imgui.h"
 
 #include "ResourceManager.hpp"
-#include "RenderingStructs.hpp"
-#include "RenderingVariables.hpp"
+#include "RenderingObjects.hpp"
 #include "Debug.hpp"
 #include "UI.hpp"
 
 namespace Renderer {
+
+	static void* pCurrentShader = nullptr;
+	static void* pCurrentCamera = nullptr;
+
 	class Shader {
 	public:
 		Shader(std::string name, std::string filePath):name(name), m_filePath(filePath) {
@@ -375,10 +378,6 @@ namespace Renderer {
 		}
 
 	private:
-
-		Shader* m_pCurrentShader = nullptr;
-		Camera* m_pCurrentCamera = nullptr;
-
 		std::vector<Model*> m_pModels;
 		std::vector<Camera*> m_pCameras;
 		std::vector<Shader*> m_pShaders;

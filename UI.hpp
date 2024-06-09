@@ -13,8 +13,8 @@
 namespace UIManager {
 	class UIElement {
 	public:
-		UIElement() {};
-		~UIElement() {};
+		UIElement() = default;
+		~UIElement() = default;
 
 		virtual void OnUIRender() = 0;
 	private:
@@ -70,14 +70,14 @@ namespace UIManager {
 		glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
 
 		glBindTexture(GL_TEXTURE_2D, m_frameBufferColorTexture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_pViewportSize->x, m_pViewportSize->y, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (GLsizei)m_pViewportSize->x, (GLsizei)m_pViewportSize->y, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 		glBindTexture(GL_TEXTURE_2D, m_frameBufferDepthTexture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, m_pViewportSize->x, m_pViewportSize->y, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, (GLsizei)m_pViewportSize->x, (GLsizei)m_pViewportSize->y, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -162,7 +162,7 @@ namespace UIManager {
 		for (UIWindow window : m_UIWindows) {
 			if (window.enabled) {
 				ImGui::Begin(window.windowName.c_str());
-				for (int i{ 0 }; i < window.elementCount; i++) {
+				for (unsigned int i{ 0 }; i < window.elementCount; i++) {
 					window.element[i]->OnUIRender();
 				}
 					ImGui::End();

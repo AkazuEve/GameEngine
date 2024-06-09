@@ -40,5 +40,5 @@ void main()  {
     vec4 lightAngle = vec4(0.0, 1.0, 0.0, 1.0);
     lightAngle = normalize(lightAngle) * model;
 
-	FragColor = vec4(hsv2rgb(posterizedHsv), 1.0) * (max(dot(Normal, lightAngle.xyz), 0.4));
+	FragColor = vec4(hsv2rgb(posterizedHsv), 1.0) * (max(dot(Normal, lightAngle.xyz), 0.3));
 }

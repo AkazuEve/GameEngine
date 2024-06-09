@@ -10,7 +10,7 @@
 #include <string>
 
 //Structs to pack data to
-#include "RenderingStructs.hpp"
+#include "RenderingObjects.hpp"
 
 //Math cause numbers hard
 #include <glm/glm.hpp>
