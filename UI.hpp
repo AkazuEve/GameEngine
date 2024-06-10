@@ -39,8 +39,8 @@ namespace UIManager {
 
 	static ImVec2* m_pViewportSize;
 
-	void InitImGui(GLFWwindow* window) {
-		m_pCurrentWindow = window;
+	void InitImGui() {
+		m_pCurrentWindow = glfwGetCurrentContext();
 		//Setup ImGui
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
@@ -66,8 +66,9 @@ namespace UIManager {
 
 	void RegisterElement(UIElement* element, std::string windowName, bool windowEnabled) {
 		bool foundWindow = false;
-		for (UIWindow window : m_UIWindows) {
-			if (window.windowName == windowName) {
+
+		for (unsigned int i{ 0 }; i < m_UIWindows.size(); i++) {
+			if (m_UIWindows[i].windowName == windowName) {
 				foundWindow = true;
 				DEBUGPRINT("Fount array with name: " << windowName);
 			}
@@ -80,6 +81,7 @@ namespace UIManager {
 		}
 		
 		//It worky now
+		//Now I realize that it didn't work before cause the range based for loop was working with copies, I'm bad at this lmao
 		for (unsigned int i{ 0 }; i < m_UIWindows.size(); i++) {
 			if (m_UIWindows[i].windowName == windowName) {
 				if (!(m_UIWindows[i].elementCount >= 10)) {
@@ -89,6 +91,29 @@ namespace UIManager {
 				}
 			}
 		}
+	}
+
+	void RenderViewport(std::string title, GLuint* texture, ImVec2& viewportSize) {
+		ImGui::Begin(title.c_str());
+		ImGui::BeginChild(title.c_str());
+
+		viewportSize = ImGui::GetWindowSize();
+		ImGui::Image(*(ImTextureID*)texture, viewportSize, ImVec2(0, 1), ImVec2(1, 0));
+		
+		ImGui::EndChild();
+		ImGui::End();
+	}
+
+	void RenderViewport(std::string title, GLuint* texture) {
+		ImGui::Begin(title.c_str());
+		ImGui::BeginChild(title.c_str());
+
+		ImVec2 bufferSize;
+		bufferSize = ImGui::GetWindowSize();
+		ImGui::Image(*(ImTextureID*)texture, bufferSize, ImVec2(0, 1), ImVec2(1, 0));
+
+		ImGui::EndChild();
+		ImGui::End();
 	}
 
 	void BeginFrame() {   //New frame

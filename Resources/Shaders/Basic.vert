@@ -12,5 +12,5 @@ out vec3 Normal;
 void main()  {
     gl_Position = cameraMatrix * model * vec4(aPosition, 1.0); 
     TexCoord = aTex;
-    Normal = aNormal;
+    Normal =  vec4(normalize(model * vec4(aNormal, 1.0))).xyz;
 }

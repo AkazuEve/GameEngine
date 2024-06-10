@@ -17,7 +17,7 @@
 namespace Renderer {
 
 	static void* pCurrentShader = nullptr;
-	static void* pCurrentCamera = nullptr;
+	static void* pCurrentCamera = nullptr; 
 
 	class Shader {
 	public:
@@ -315,9 +315,86 @@ namespace Renderer {
 		std::string m_name;
 	};
 
+	class FrameBuffer {
+	public:
+		FrameBuffer() {
+			glGenFramebuffers(1, &m_frameBuffer);
+		}
+		~FrameBuffer() {
+			glDeleteBuffers(1, &m_frameBuffer);
+
+			for (unsigned int i{ 0 }; i < m_frameBufferAttachments.size(); i++) {
+				glDeleteTextures(1, &m_frameBufferAttachments[i].texture);
+			}
+		}
+
+		void AddAttachment(GLenum attachment, GLenum internalFormat, GLenum format, GLenum type) {
+			m_frameBufferAttachments.push_back(Attachmenttexture(attachment, internalFormat, format, type));
+			size_t index = m_frameBufferAttachments.size() - 1;
+
+			glGenTextures(1, &m_frameBufferAttachments[index].texture);
+
+			glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+			glBindTexture(GL_TEXTURE_2D, m_frameBufferAttachments[index].texture);
+
+			glTexImage2D(GL_TEXTURE_2D, 0, m_frameBufferAttachments[index].internalFormat, 100, 100, 0, m_frameBufferAttachments[index].format, m_frameBufferAttachments[index].type, nullptr);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+			glFramebufferTexture2D(GL_FRAMEBUFFER, m_frameBufferAttachments[index].attachment, GL_TEXTURE_2D, m_frameBufferAttachments[index].texture, 0);
+
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+
+		void BindAndSetupForRender(GLsizei width, GLsizei height) {
+			glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+			glViewport(0, 0, width, height);
+
+			for (unsigned int i{ 0 }; i < m_frameBufferAttachments.size(); i++) {
+				glBindTexture(GL_TEXTURE_2D, m_frameBufferAttachments[i].texture);
+				glTexImage2D(GL_TEXTURE_2D, 0, m_frameBufferAttachments[i].internalFormat, width, height, 0, m_frameBufferAttachments[i].format, m_frameBufferAttachments[i].type, nullptr);
+			}
+			
+			glBindTexture(GL_TEXTURE_2D, 0);
+
+			glClear(GL_COLOR_BUFFER_BIT);
+			glClear(GL_DEPTH_BUFFER_BIT);
+		}
+
+		GLuint* GetTexturePtrByAttachment(GLenum attachment) {
+			for (unsigned int i{ 0 }; i < m_frameBufferAttachments.size(); i++) {
+				if (m_frameBufferAttachments[i].attachment == attachment) {
+					return &m_frameBufferAttachments[i].texture;
+				}
+			}
+		}
+
+	private:
+		struct Attachmenttexture {
+			Attachmenttexture(GLenum attachment, GLenum internalFormat, GLenum format, GLenum type) {
+				this->internalFormat = internalFormat;
+				this->format= format;
+				this->type = type;
+				this->attachment = attachment;
+			}
+			
+			GLenum attachment;
+			GLuint texture = 0;
+			GLenum internalFormat;
+			GLenum format;
+			GLenum type;
+		};
+
+		GLuint m_frameBuffer;
+		std::vector<Attachmenttexture> m_frameBufferAttachments;
+	};
+
 	class Renderer: UIManager::UIElement {
 	public:
-		Renderer(ImVec2* viewportSize) {
+		Renderer() {
 			glClearColor(m_clearClolor.x, m_clearClolor.y, m_clearClolor.z, 1.0f);
 
 			glEnable(GL_DEPTH_TEST);
@@ -327,41 +404,13 @@ namespace Renderer {
 			glCullFace(GL_FRONT);
 			glFrontFace(GL_CW);
 
-
-			glGenFramebuffers(1, &m_frameBuffer);
-			glGenTextures(1, &m_frameBufferColorTexture);
-			glGenTextures(1, &m_frameBufferDepthTexture);
-
-			glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
-
-			glBindTexture(GL_TEXTURE_2D, m_frameBufferColorTexture);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 100, 100, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-			glBindTexture(GL_TEXTURE_2D, m_frameBufferDepthTexture);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, 100, 100, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_frameBufferColorTexture, 0);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_frameBufferDepthTexture, 0);
-
-			glBindTexture(GL_TEXTURE_2D, 0);
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			m_vieportFramebuffer.AddAttachment(GL_COLOR_ATTACHMENT0 ,GL_RGB, GL_RGB, GL_UNSIGNED_BYTE);
+			m_vieportFramebuffer.AddAttachment(GL_DEPTH_ATTACHMENT,GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT);
 
 			UIManager::RegisterElement(this, "Renderer", true);
 		}
 
 		~Renderer() {
-			glDeleteTextures(1, &m_frameBufferColorTexture);
-			glDeleteTextures(1, &m_frameBufferDepthTexture);
-			glDeleteFramebuffers(1, &m_frameBuffer);
-
 			for (Model* model : m_pModels) {
 				delete model;
 			}
@@ -397,18 +446,8 @@ namespace Renderer {
 			return newModel;
 		}
 
-		void RenderAll() {
-			glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
-			glViewport(0, 0, (GLsizei)m_pViewportSize.x, (GLsizei)m_pViewportSize.y);
-
-			glBindTexture(GL_TEXTURE_2D, m_frameBufferColorTexture);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (GLsizei)m_pViewportSize.x, (GLsizei)m_pViewportSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-
-			glBindTexture(GL_TEXTURE_2D, m_frameBufferDepthTexture);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, (GLsizei)m_pViewportSize.x, (GLsizei)m_pViewportSize.y, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
-
-			glClear(GL_COLOR_BUFFER_BIT);
-			glClear(GL_DEPTH_BUFFER_BIT);
+		void RenderFrame() {
+			m_vieportFramebuffer.BindAndSetupForRender((GLsizei)m_pViewportSize.x, (GLsizei)m_pViewportSize.y);
 
 			static_cast<Camera*>(pCurrentCamera)->UpdateMatrix(m_pViewportSize);
 
@@ -418,9 +457,7 @@ namespace Renderer {
 		}
 
 	private:
-		GLuint m_frameBuffer;
-		GLuint m_frameBufferColorTexture;
-		GLuint m_frameBufferDepthTexture;
+		FrameBuffer m_vieportFramebuffer;
 
 		std::vector<Model*> m_pModels;
 		std::vector<Camera*> m_pCameras;
@@ -566,12 +603,8 @@ namespace Renderer {
 			if (ImGui::TreeNode("Models")) {
 				for (unsigned int i{ 0 }; i < m_pModels.size(); i++) {
 					if (ImGui::TreeNode(m_pModels[i]->m_name.c_str())) {
-						if (ImGui::Button("Remove")) {
-							delete m_pModels[i];
-							m_pModels.erase(m_pModels.begin() + i);
-						}
 						ImGui::Checkbox("Is rendered", &m_pModels[i]->m_isRendered);
-						if (ImGui::TreeNode("Transform")) {
+
 							ImGui::DragFloat3("Position", &m_pModels[i]->position.x, 0.1f, -100.0f, 100.0f);
 							ImGui::DragFloat3("Rotation", &m_pModels[i]->rotation.x, 0.1f, -180.0f, 180.0f);
 							ImGui::DragFloat3("Scale", &m_pModels[i]->scale.x, 0.1f, -10.0f, 10.0f);
@@ -581,34 +614,18 @@ namespace Renderer {
 								m_pModels[i]->rotation = glm::vec3(0.0f);
 								m_pModels[i]->scale = glm::vec3(1.0f);
 							}
+							if (ImGui::Button("Remove")) {
+								delete m_pModels[i];
+								m_pModels.erase(m_pModels.begin() + i);
+							}
 							ImGui::TreePop();
-						}
-						ImGui::TreePop();
 					}
 				}
 				ImGui::TreePop();
 			}
 
-			ImGui::Begin("Viewport");
-			ImGui::BeginChild("Viewport");
-
-			m_pViewportSize = ImGui::GetWindowSize();
-
-			ImGui::Image(*(ImTextureID*)&m_frameBufferColorTexture, m_pViewportSize, ImVec2(0, 1), ImVec2(1, 0));
-
-			ImGui::EndChild();
-			ImGui::End();
-
-
-			ImGui::Begin("Depth Buffer");
-			ImGui::BeginChild("Depth Buffer");
-
-			static ImVec2 bufferSize;
-			bufferSize = ImGui::GetWindowSize();
-			ImGui::Image(*(ImTextureID*)&m_frameBufferDepthTexture, bufferSize, ImVec2(0, 1), ImVec2(1, 0));
-
-			ImGui::EndChild();
-			ImGui::End();
+			UIManager::RenderViewport("Main Viewport", m_vieportFramebuffer.GetTexturePtrByAttachment(GL_COLOR_ATTACHMENT0), m_pViewportSize);
+			UIManager::RenderViewport("Depth Buffer", m_vieportFramebuffer.GetTexturePtrByAttachment(GL_DEPTH_ATTACHMENT));
 		}
 	};
 }

@@ -13,11 +13,11 @@
 class App: UIManager::UIElement {
 public:
 	App() {
-		UIManager::InitImGui(window.GetWindowPtr());
+		UIManager::InitImGui();
+
 		m_renderer.CreateObject<Renderer::Shader>("Posterizing shader", "Resources/Shaders/Basic");
 		m_renderer.CreateObject<Renderer::Camera>("Main", 90.0f, true);
-
-		auto monke = m_renderer.CreateObject<Renderer::Model>("Monke", "Resources/Models/Monke.ply", "Resources/Textures/planks.png");
+		m_renderer.CreateObject<Renderer::Model>("Monke", "Resources/Models/Monke.ply", "Resources/Textures/planks.png");
 
 		UIManager::RegisterElement(this, "App", true);
 	};
@@ -34,7 +34,7 @@ private:
 	unsigned int HEIGHT = (unsigned int)(1080 * 0.9);
 	Window window{ WIDTH, HEIGHT };
 
-	Renderer::Renderer m_renderer{&viewportResolusion};
+	Renderer::Renderer m_renderer;
 	Profiler::Profiler m_profiler;
 
 	std::filesystem::path currentFilePath = std::filesystem::current_path();
@@ -118,7 +118,8 @@ private:
 void App::Run() {
 	while (window.ShouldRunNextFrame()) {
 		//Render all geometry with OpenGL
-		m_renderer.RenderAll();
+		m_renderer.RenderFrame();
+
 		//Run UI
 		UIManager::BeginFrame();
 		UIManager::RenderUI();
