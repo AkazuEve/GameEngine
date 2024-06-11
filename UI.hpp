@@ -1,14 +1,17 @@
 #pragma once
 
-#include "Debug.hpp"
-
 #include <vector>
 #include <string>
 #include <functional>
 
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
 #include "Dependecies/imgui/imgui.h"
 #include "Dependecies/imgui/imgui_impl_glfw.h"
 #include "Dependecies/imgui/imgui_impl_opengl3.h"
+
+#include "Console.hpp"
 
 namespace UIManager {
 	class UIElement {
@@ -34,10 +37,21 @@ namespace UIManager {
 		bool enabled{ true };
 	};
 
+	struct UIFunction {
+		UIFunction(void (*func)(), bool* isEnaled, std::string name) {
+			this->func = func;
+			this->isEnaled = isEnaled;
+			this->name = name;
+		}
+		void (*func)();
+		bool* isEnaled;
+		std::string name;
+	};
+
 	static GLFWwindow* m_pCurrentWindow = nullptr;
 	static std::vector<UIWindow> m_UIWindows;
 
-	static ImVec2* m_pViewportSize;
+	static std::vector<UIFunction> m_UIFunctions;
 
 	void InitImGui() {
 		m_pCurrentWindow = glfwGetCurrentContext();
@@ -56,6 +70,8 @@ namespace UIManager {
 
 		ImGui_ImplGlfw_InitForOpenGL(m_pCurrentWindow, true);
 		ImGui_ImplOpenGL3_Init("#version 450");
+
+		m_UIFunctions.push_back(UIFunction(Console::ConsoleUI, &Console::isEnabled, Console::name));
 	}
 
 	void FreeImGui() { //Free all resources
@@ -70,27 +86,31 @@ namespace UIManager {
 		for (unsigned int i{ 0 }; i < m_UIWindows.size(); i++) {
 			if (m_UIWindows[i].windowName == windowName) {
 				foundWindow = true;
-				DEBUGPRINT("Fount array with name: " << windowName);
+				Console::SendLine(std::string("Fount array with name: "), windowName, CONSOLE_MESSAGE_DEBUG);
 			}
 		}
 
 		if (!foundWindow) {
 			m_UIWindows.push_back(windowName);
 			m_UIWindows[m_UIWindows.size() - 1].enabled = windowEnabled;
-			DEBUGPRINT("Pushed in not yet existing window: " << windowName);
+			Console::SendLine("Pushed in not yet existing window: ", windowName, CONSOLE_MESSAGE_DEBUG);
 		}
 		
 		//It worky now
-		//Now I realize that it didn't work before cause the range based for loop was working with copies, I'm bad at this lmao
+		//Now I realize that it didn't work before cause the iterator based for loop was working with copies, I'm bad at this lmao
 		for (unsigned int i{ 0 }; i < m_UIWindows.size(); i++) {
 			if (m_UIWindows[i].windowName == windowName) {
 				if (!(m_UIWindows[i].elementCount >= 10)) {
 					m_UIWindows[i].element[m_UIWindows[i].elementCount] = element;
 					m_UIWindows[i].elementCount++;
-					DEBUGPRINT("Found existing window: " << windowName << " and function ptr has been pushed in");
+					Console::SendLine("Found existing window: ", windowName, " and function ptr has been pushed in", CONSOLE_MESSAGE_DEBUG);
 				}
 			}
 		}
+	}
+
+	void RegisterFunction(void (*func)(), bool* isEnabled, std::string name) {
+		m_UIFunctions.push_back(UIFunction(func, isEnabled, name));
 	}
 
 	void RenderViewport(std::string title, GLuint* texture, ImVec2& viewportSize) {
@@ -116,7 +136,7 @@ namespace UIManager {
 		ImGui::End();
 	}
 
-	void BeginFrame() {   //New frame
+	void RenderUI() {   //Render all UI
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
@@ -127,10 +147,6 @@ namespace UIManager {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, width, height);
 
-		glClear(GL_COLOR_BUFFER_BIT);
-	}
-
-	void RenderUI() {   //Render all UI
 		if (ImGui::BeginMainMenuBar()) {
 			if (ImGui::BeginMenu("File")) {
 				if (ImGui::MenuItem("Exit")) { glfwSetWindowShouldClose(m_pCurrentWindow, true); }
@@ -140,6 +156,9 @@ namespace UIManager {
 				for (int i{ 0 }; i < m_UIWindows.size(); i++) {
 					ImGui::Checkbox(m_UIWindows[i].windowName.c_str(), &m_UIWindows[i].enabled);
 				}
+				for (unsigned int i{ 0 }; i < m_UIFunctions.size(); i++) {
+					ImGui::Checkbox(m_UIFunctions[i].name.c_str(), m_UIFunctions[i].isEnaled);
+				}
 				ImGui::EndMenu();
 			}
 			ImGui::EndMainMenuBar();
@@ -147,24 +166,29 @@ namespace UIManager {
 
 		ImGui::DockSpaceOverViewport();
 
-		for (UIWindow window : m_UIWindows) {
-			if (window.enabled) {
-				ImGui::Begin(window.windowName.c_str());
-				for (unsigned int i{ 0 }; i < window.elementCount; i++) {
-					window.element[i]->OnUIRender();
+		for (unsigned int w{ 0 }; w < m_UIWindows.size(); w++) {
+			if (m_UIWindows[w].enabled) {
+				ImGui::Begin(m_UIWindows[w].windowName.c_str());
+				for (unsigned int i{ 0 }; i < m_UIWindows[w].elementCount; i++) {
+					m_UIWindows[w].element[i]->OnUIRender();
 				}
-					ImGui::End();
+				ImGui::End();
 			}
 		}
-	}
 
-	void EndFrame() {   //Render UI
+		for (unsigned int i{ 0 }; i < m_UIFunctions.size(); i++) {
+			if(*m_UIFunctions[i].isEnaled)
+			m_UIFunctions[i].func();
+		}
+
+
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-		static GLFWwindow* backup_current_context; backup_current_context = glfwGetCurrentContext();
-		ImGui::UpdatePlatformWindows();
-		ImGui::RenderPlatformWindowsDefault();
-		glfwMakeContextCurrent(backup_current_context);
+		//This is here for the future when i want to go back to multi-vieport stuff
+		//static GLFWwindow* backup_current_context; backup_current_context = glfwGetCurrentContext();
+		//ImGui::UpdatePlatformWindows();
+		//ImGui::RenderPlatformWindowsDefault();
+		//glfwMakeContextCurrent(backup_current_context);
 	}
 }

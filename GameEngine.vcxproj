@@ -98,7 +98,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.hpp" />
-    <ClInclude Include="Debug.hpp" />
+    <ClInclude Include="Console.hpp" />
     <ClInclude Include="Dependecies\imgui\imconfig.h" />
     <ClInclude Include="Dependecies\imgui\imgui.h" />
     <ClInclude Include="Dependecies\imgui\imgui_impl_glfw.h" />

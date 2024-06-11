@@ -19,79 +19,77 @@
 #include <glad/glad.h>
 
 MeshData LoadModelFromPLYFile(std::string filePath) {
-	TIMEDFUNC("Parsing file: " << filePath, 
-		std::ifstream file{ filePath };
-		if (!file.is_open())
-			throw std::exception("Failed to open file");
+	std::ifstream file{ filePath };
+	if (!file.is_open())
+		throw std::exception("Failed to open file");
 
-		MeshData data;
-		Vertex veretx;
-		unsigned int tmpInt;
+	MeshData data;
+	Vertex veretx;
+	unsigned int tmpInt;
 
-		std::string line;
-		std::string word;
-		std::stringstream stream;
+	std::string line;
+	std::string word;
+	std::stringstream stream;
 
-		unsigned int vertexCount = 0;
-		unsigned int triangleCount = 0;
+	unsigned int vertexCount = 0;
+	unsigned int triangleCount = 0;
 
 
-		while (std::getline(file, line)) {
-			stream.clear();
-			stream.str(line);
+	while (std::getline(file, line)) {
+		stream.clear();
+		stream.str(line);
+
+		stream >> word;
+
+		//Here I read how many vertices and indices the model has
+		//For now I don't care for the layout just want it to work
+		if (word == "element") {
 
 			stream >> word;
 
-			//Here I read how many vertices and indices the model has
-			//For now I don't care for the layout just want it to work
-			if (word == "element") {
-
-				stream >> word;
-
-				if (word == "vertex") {
-					stream >> vertexCount;
-					data.vertices.reserve(vertexCount);
-				}
-
-				if (word == "face") {
-					stream >> triangleCount;
-					data.indices.reserve(3 * triangleCount);
-				}
+			if (word == "vertex") {
+				stream >> vertexCount;
+				data.vertices.reserve(vertexCount);
 			}
 
-			//End of header time for data parsing
-			if (word == "end_header") {
-				//This just contains vertex data
-				for (unsigned int i{ 0 }; i < vertexCount; i++) {
-					std::getline(file, line);
-					stream.clear();
-					stream.str(line);
-
-					stream >> veretx.pos.x >> veretx.pos.y >> veretx.pos.z;
-					stream >> veretx.nor.x >> veretx.nor.y >> veretx.nor.z;
-					stream >> veretx.tex.x >> veretx.tex.y;
-
-					data.vertices.emplace_back(veretx);
-
-				}
-
-				//This line will have a int for vectex amount per face then data >:|
-				for (unsigned int i{ 0 }; i < triangleCount; i++) {
-					std::getline(file, line);
-					stream.clear();
-					stream.str(line);
-
-					stream >> tmpInt;
-
-					for (unsigned int x{ 0 }; x < 3; x++) {
-						stream >> tmpInt;
-						data.indices.emplace_back(tmpInt);
-					}
-
-				}
+			if (word == "face") {
+				stream >> triangleCount;
+				data.indices.reserve(3 * triangleCount);
 			}
 		}
-	)
+
+		//End of header time for data parsing
+		if (word == "end_header") {
+			//This just contains vertex data
+			for (unsigned int i{ 0 }; i < vertexCount; i++) {
+				std::getline(file, line);
+				stream.clear();
+				stream.str(line);
+
+				stream >> veretx.pos.x >> veretx.pos.y >> veretx.pos.z;
+				stream >> veretx.nor.x >> veretx.nor.y >> veretx.nor.z;
+				stream >> veretx.tex.x >> veretx.tex.y;
+
+				data.vertices.emplace_back(veretx);
+
+			}
+
+			//This line will have a int for vectex amount per face then data >:|
+			for (unsigned int i{ 0 }; i < triangleCount; i++) {
+				std::getline(file, line);
+				stream.clear();
+				stream.str(line);
+
+				stream >> tmpInt;
+
+				for (unsigned int i{ 0 }; i < 3; i++) {
+					stream >> tmpInt;
+					data.indices.emplace_back(tmpInt);
+				}
+
+			}
+		}
+	}
 /*  
 	for (unsigned int i{ 0 }; i < data.vertices.size(); i++) {
 		std::cout << i << ": Px:" << data.vertices[i].pos.x << " Py:" << data.vertices[i].pos.y << " Pz:" << data.vertices[i].pos.z <<

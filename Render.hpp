@@ -9,9 +9,9 @@
 
 #include "Dependecies/imgui/imgui.h"
 
-#include "ResourceManager.hpp"
 #include "RenderingObjects.hpp"
-#include "Debug.hpp"
+#include "ResourceManager.hpp"
+#include "Console.hpp"
 #include "UI.hpp"
 
 namespace Renderer {
@@ -38,20 +38,20 @@ namespace Renderer {
 			glDeleteShader(vertexShader);
 			glDeleteShader(fragmentShader);
 
-			DEBUGPRINT("Created shader: " << m_filePath);
+			Console::SendLine("Created shader: " ,m_filePath, CONSOLE_MESSAGE_DEBUG);
 
 			this->Bind();
 		}
 		~Shader() {
 			glDeleteProgram(m_ID);
-			DEBUGPRINT("Freed shader: " << m_filePath);
+			Console::SendLine("Freed shader: ", m_filePath, CONSOLE_MESSAGE_DEBUG);
 		}
 
 		Shader(const Shader&) = delete;
 		Shader operator=(const Shader&) = delete;
 
 		void HotReload() {
-			DEBUGPRINT("Hot reloading shader: " << m_filePath);
+			Console::SendLine("Hot reloading shader: ", m_filePath, CONSOLE_MESSAGE_NOTIFICATION);
 
 			std::string tmp;
 			bool successFlag = true;
@@ -72,7 +72,7 @@ namespace Renderer {
 				glDeleteShader(fragmentShader);
 
 				glUseProgram(m_ID);
-				DEBUGPRINT("Hot reloading success");
+				Console::SendLine("Hot reloading success", CONSOLE_MESSAGE_SUCCESS);
 			}
 		}
 
@@ -107,18 +107,18 @@ namespace Renderer {
 				glGetShaderInfoLog(shader, maxLength, &maxLength, &errorLog[0]);
 
 				// Provide the infolog in whatever manor you deem best.
-				std::cout << errorLog.data() << std::endl;
+				Console::SendLine(errorLog.data(), CONSOLE_MESSAGE_ERROR);
 
 				// Exit with failure.
 				glDeleteShader(shader); // Don't leak the shader.
 				switch (shaderType)
 				{
 				case GL_VERTEX_SHADER:
-					std::cout << "Vertex shader compilation failure" << std::endl;
+					Console::SendLine("Vertex shader compilation failure", CONSOLE_MESSAGE_ERROR);
 					successFlag = false;
 					break;
 				case GL_FRAGMENT_SHADER:
-					std::cout << "Fragment shader compilation failure" << std::endl;
+					Console::SendLine("Fragment shader compilation failure", CONSOLE_MESSAGE_ERROR);
 					successFlag = false;
 					break;
 				}
@@ -139,7 +139,7 @@ namespace Renderer {
 			glDeleteBuffers(1, &m_vertexBuffer);
 			glDeleteBuffers(1, &m_indexBuffer);
 
-			DEBUGPRINT("Freed mesh data");
+			Console::SendLine("Freed mesh data", CONSOLE_MESSAGE_DEBUG);
 		}
 		
 		Mesh(const Mesh&) = delete;
@@ -167,7 +167,7 @@ namespace Renderer {
 			glBindVertexArray(0);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-			DEBUGPRINT("Created mesh data");
+			Console::SendLine("Created mesh data", CONSOLE_MESSAGE_DEBUG);
 		}
 
 		void Bind() {
@@ -192,7 +192,7 @@ namespace Renderer {
 		}
 		~Texture2D() {
 			glDeleteTextures(1, &m_ID);
-			DEBUGPRINT("Freed texture: " << m_name);
+			Console::SendLine("Freed texture: ", m_name, CONSOLE_MESSAGE_DEBUG);
 		}
 
 		Texture2D(const Texture2D&) = delete;
@@ -208,8 +208,8 @@ namespace Renderer {
 				throw std::runtime_error("Could not load texture");
 			}
 
-			DEBUGPRINT("Created texture: " << texturePath);
-			DEBUGFUNC(m_name = texturePath);
+			Console::SendLine("Created texture: ", texturePath, CONSOLE_MESSAGE_DEBUG);
+			m_name = texturePath;
 
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, m_ID);
@@ -232,7 +232,7 @@ namespace Renderer {
 	private:
 		GLuint m_ID;
 
-		DEBUGVAR(std::string m_name;)
+		std::string m_name;
 	};
 
 	class Camera {
@@ -451,8 +451,8 @@ namespace Renderer {
 
 			static_cast<Camera*>(pCurrentCamera)->UpdateMatrix(m_pViewportSize);
 
-			for (Model* model : m_pModels) {
-				model->Render();
+			for (unsigned int i{ 0 }; i < m_pModels.size(); i++) {
+				m_pModels[i]->Render();
 			}
 		}
 
@@ -602,7 +602,11 @@ namespace Renderer {
 
 			if (ImGui::TreeNode("Models")) {
 				for (unsigned int i{ 0 }; i < m_pModels.size(); i++) {
-					if (ImGui::TreeNode(m_pModels[i]->m_name.c_str())) {
+					static std::string name;
+
+					name = m_pModels[i]->m_name + std::string("##", i);
+
+					if (ImGui::TreeNode(name.c_str())) {
 						ImGui::Checkbox("Is rendered", &m_pModels[i]->m_isRendered);
 
 							ImGui::DragFloat3("Position", &m_pModels[i]->position.x, 0.1f, -100.0f, 100.0f);
@@ -624,8 +628,8 @@ namespace Renderer {
 				ImGui::TreePop();
 			}
 
-			UIManager::RenderViewport("Main Viewport", m_vieportFramebuffer.GetTexturePtrByAttachment(GL_COLOR_ATTACHMENT0), m_pViewportSize);
 			UIManager::RenderViewport("Depth Buffer", m_vieportFramebuffer.GetTexturePtrByAttachment(GL_DEPTH_ATTACHMENT));
+			UIManager::RenderViewport("Main Viewport", m_vieportFramebuffer.GetTexturePtrByAttachment(GL_COLOR_ATTACHMENT0), m_pViewportSize);
 		}
 	};
 }

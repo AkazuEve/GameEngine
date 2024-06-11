@@ -68,9 +68,6 @@
     <ClInclude Include="App.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Debug.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Render.hpp">
       <Filter>Header Files\Rendering</Filter>
     </ClInclude>
@@ -114,6 +111,9 @@
       <Filter>Header Files\UI</Filter>
     </ClInclude>
     <ClInclude Include="Window.hpp">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Console.hpp">
       <Filter>Header Files\UI</Filter>
     </ClInclude>
   </ItemGroup>

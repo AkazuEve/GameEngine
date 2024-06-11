@@ -3,11 +3,10 @@
 #include <filesystem>
 #include <string>
 
+#include "Profiler.hpp"
+#include "Console.hpp"
 #include "Window.hpp"
 #include "Render.hpp"
-
-#include "ResourceManager.hpp"
-#include "Profiler.hpp"
 #include "UI.hpp"
 
 class App: UIManager::UIElement {
@@ -58,7 +57,7 @@ private:
 			for (const auto& entry : std::filesystem::directory_iterator(currentFilePath.generic_string() + "/Resources/Models/")) {
 				if (ImGui::Button(entry.path().generic_string().c_str())) {
 					modelPath = entry.path().generic_string();
-					DEBUGPRINT("Model path set to" << modelPath);
+					Console::SendLine("Model path set to", modelPath, CONSOLE_MESSAGE_DEBUG);
 				}
 			}
 			ImGui::EndPopup();
@@ -74,7 +73,7 @@ private:
 			for (const auto& entry : std::filesystem::directory_iterator(currentFilePath.generic_string() + "/Resources/Textures/")) {
 				if (ImGui::Button(entry.path().generic_string().c_str())) {
 					diffuseTexturePath = entry.path().generic_string();
-					DEBUGPRINT("Diffuse path set to" << diffuseTexturePath);
+					Console::SendLine("Diffuse path set to", diffuseTexturePath, CONSOLE_MESSAGE_DEBUG);
 				}
 			}
 			ImGui::EndPopup();
@@ -86,7 +85,7 @@ private:
 				// Always center this window when appearing
 				ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 				ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-				DEBUGPRINT("Objec name is NULL");
+				Console::SendLine("Objec name is NULL", CONSOLE_MESSAGE_ERROR);
 			}
 			else {
 				m_renderer.CreateObject<Renderer::Model>(name, modelPath, diffuseTexturePath);
@@ -121,8 +120,6 @@ void App::Run() {
 		m_renderer.RenderFrame();
 
 		//Run UI
-		UIManager::BeginFrame();
 		UIManager::RenderUI();
-		UIManager::EndFrame();
 	}
 }
