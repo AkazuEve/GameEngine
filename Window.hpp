@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -57,6 +59,7 @@ static void APIENTRY glDebugOutput(GLenum source,
     debugMessage << std::endl;
 
     Console::SendLine(debugMessage.str(), CONSOLE_MESSAGE_ERROR);
+    std::cout << debugMessage.str() << std::endl;
 }
 
 class Window: UIManager::UIElement {

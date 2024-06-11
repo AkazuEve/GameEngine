@@ -7,6 +7,7 @@ uniform mat4 model;
 
 in vec2 TexCoord;
 in vec3 Normal;
+out vec3 CurrenPositon;
 
 vec3 rgb2hsv(vec3 c)
 {
@@ -31,13 +32,15 @@ float posterize(float value, int levels) {
 }
 
 void main()  {
-    vec3 outColor;
     vec4 textureSample = texture(diffuseTexture, TexCoord);
 
-    vec3 hsvSample = rgb2hsv(textureSample.rgb);
-    vec3 posterizedHsv = vec3(posterize(hsvSample.x, 15), posterize(hsvSample.y, 6), posterize(hsvSample.z, 5));
+    //vec3 hsvSample = rgb2hsv(textureSample.rgb);
+    //vec3 posterizedHsv = vec3(posterize(hsvSample.x, 15), posterize(hsvSample.y, 6), posterize(hsvSample.z, 5));
 
     vec3 lightAngle = vec3(0.0, 1.0, -1.0);
+    vec3 normal = normalize(Normal);
+  
+    float diffuse = max(dot(normal, lightAngle), 0.0);
 
-	FragColor = vec4(hsv2rgb(posterizedHsv), 1.0) * dot(Normal, normalize(lightAngle));
+	FragColor = textureSample * diffuse;
 }

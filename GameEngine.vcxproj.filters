@@ -124,5 +124,11 @@
     <None Include="Resources\Shaders\Basic.vert">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="Resources\Shaders\gbuffer.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Resources\Shaders\gbuffer.vert">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

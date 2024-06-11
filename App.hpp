@@ -14,8 +14,10 @@ public:
 	App() {
 		UIManager::InitImGui();
 
-		m_renderer.CreateObject<Renderer::Shader>("Posterizing shader", "Resources/Shaders/Basic");
-		m_renderer.CreateObject<Renderer::Camera>("Main", 90.0f, true);
+		m_renderer.CreateObject<Renderer::Shader>("Posterizing shader", "Resources/Shaders/gbuffer");
+		auto* camera = m_renderer.CreateObject<Renderer::Camera>("Main", 90.0f, true);
+		camera->position = glm::vec3(0.0f, 0.0f, -1.7f);
+
 		m_renderer.CreateObject<Renderer::Model>("Monke", "Resources/Models/Monke.ply", "Resources/Textures/planks.png");
 
 		UIManager::RegisterElement(this, "App", true);

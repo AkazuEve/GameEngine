@@ -242,24 +242,22 @@ namespace Renderer {
 				pCurrentCamera = static_cast<void*>(this);
 			}
 		};
-		~Camera() {};
+		~Camera() = default;
 
-		void UpdateMatrix(ImVec2 viewportSize) {
+		void UpdateMatrix(ImVec2& viewportSize) {
 			m_projection = glm::perspective(glm::radians(Fov), (float)viewportSize.x / (float)viewportSize.y, 0.1f, 100.0f);
 			m_view = glm::lookAt(position, position + glm::vec3(0.0f, 0.0f, 1.0f), Up);
 			glUniformMatrix4fv(glGetUniformLocation(static_cast<Shader*>(pCurrentShader)->GetID(), "cameraMatrix"), 1, GL_FALSE, glm::value_ptr(m_projection * m_view));
 		};
 
 	private:
-		float m_aspectRatio = 0.0f;
-
 		glm::vec3 Up{ 0.0f, 1.0f, 0.0f };
 		glm::mat4 m_projection{ 0.0f };
 		glm::mat4 m_view{ 0.0f };
 	public:
-		std::string name{ " " };
 		float Fov = 0.0f;
-		glm::vec3 position{ 0.0f, 0.0f, -3.0f };
+		std::string name{ " " };
+		glm::vec3 position{ 0.0f, 0.0f, 0.0f };
 	};
 
 	class Model {
@@ -332,6 +330,8 @@ namespace Renderer {
 			m_frameBufferAttachments.push_back(Attachmenttexture(attachment, internalFormat, format, type));
 			size_t index = m_frameBufferAttachments.size() - 1;
 
+			m_attachments.push_back(attachment);
+
 			glGenTextures(1, &m_frameBufferAttachments[index].texture);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
@@ -344,9 +344,12 @@ namespace Renderer {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 			glFramebufferTexture2D(GL_FRAMEBUFFER, m_frameBufferAttachments[index].attachment, GL_TEXTURE_2D, m_frameBufferAttachments[index].texture, 0);
+		}
 
+		void FinalizeBuffer() {
+			glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+			glDrawBuffers(m_attachments.size() - 1, m_attachments.data());
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			glBindTexture(GL_TEXTURE_2D, 0);
 		}
 
 		void BindAndSetupForRender(GLsizei width, GLsizei height) {
@@ -390,6 +393,7 @@ namespace Renderer {
 
 		GLuint m_frameBuffer;
 		std::vector<Attachmenttexture> m_frameBufferAttachments;
+		std::vector<GLenum> m_attachments;
 	};
 
 	class Renderer: UIManager::UIElement {
@@ -404,8 +408,11 @@ namespace Renderer {
 			glCullFace(GL_FRONT);
 			glFrontFace(GL_CW);
 
-			m_vieportFramebuffer.AddAttachment(GL_COLOR_ATTACHMENT0 ,GL_RGB, GL_RGB, GL_UNSIGNED_BYTE);
-			m_vieportFramebuffer.AddAttachment(GL_DEPTH_ATTACHMENT,GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT);
+			m_gBuffer.AddAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA16F, GL_RGB, GL_FLOAT);
+			m_gBuffer.AddAttachment(GL_COLOR_ATTACHMENT1, GL_RGBA16F, GL_RGB, GL_FLOAT);
+			m_gBuffer.AddAttachment(GL_COLOR_ATTACHMENT2, GL_RGBA,    GL_RGB, GL_UNSIGNED_BYTE);
+			m_gBuffer.AddAttachment(GL_DEPTH_ATTACHMENT,GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT);
+			m_gBuffer.FinalizeBuffer();
 
 			UIManager::RegisterElement(this, "Renderer", true);
 		}
@@ -447,7 +454,7 @@ namespace Renderer {
 		}
 
 		void RenderFrame() {
-			m_vieportFramebuffer.BindAndSetupForRender((GLsizei)m_pViewportSize.x, (GLsizei)m_pViewportSize.y);
+			m_gBuffer.BindAndSetupForRender((GLsizei)m_pViewportSize.x, (GLsizei)m_pViewportSize.y);
 
 			static_cast<Camera*>(pCurrentCamera)->UpdateMatrix(m_pViewportSize);
 
@@ -457,7 +464,7 @@ namespace Renderer {
 		}
 
 	private:
-		FrameBuffer m_vieportFramebuffer;
+		FrameBuffer m_gBuffer;
 
 		std::vector<Model*> m_pModels;
 		std::vector<Camera*> m_pCameras;
@@ -628,8 +635,10 @@ namespace Renderer {
 				ImGui::TreePop();
 			}
 
-			UIManager::RenderViewport("Depth Buffer", m_vieportFramebuffer.GetTexturePtrByAttachment(GL_DEPTH_ATTACHMENT));
-			UIManager::RenderViewport("Main Viewport", m_vieportFramebuffer.GetTexturePtrByAttachment(GL_COLOR_ATTACHMENT0), m_pViewportSize);
+			UIManager::RenderViewport("Color Buffer", m_gBuffer.GetTexturePtrByAttachment(GL_COLOR_ATTACHMENT0), m_pViewportSize);
+			UIManager::RenderViewport("Position Buffer", m_gBuffer.GetTexturePtrByAttachment(GL_COLOR_ATTACHMENT1));
+			UIManager::RenderViewport("Normal Buffer", m_gBuffer.GetTexturePtrByAttachment(GL_COLOR_ATTACHMENT2));
+			UIManager::RenderViewport("Depth Buffer", m_gBuffer.GetTexturePtrByAttachment(GL_DEPTH_ATTACHMENT));
 		}
 	};
 }
