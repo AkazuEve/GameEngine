@@ -12,9 +12,9 @@ out vec3 FragPos;
 
 void main()  {
     TexCoords = aTexCoords;
+
     Normal = vec3(model * vec4(aNormal, 1.0));
     FragPos = vec3(model * vec4(aPosition, 1.0));
-
 
     gl_Position = cameraMatrix * vec4(FragPos, 1.0);
 }

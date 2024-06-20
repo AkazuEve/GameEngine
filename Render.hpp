@@ -290,18 +290,25 @@ namespace Renderer {
 	private:
 		Mesh m_mesh;
 		Texture2D m_diffuseTexture;
+
 		glm::mat4 m_modelMatrix{ 1.0f };
+
+		glm::mat4 m_translationMatrix{ 1.0f };
+		glm::mat4 m_roatationlationMatrix{ 1.0f };
+		glm::mat4 m_scaleMatrix{ 1.0f };
 
 		void UpdateMatrix() {
 			static glm::mat4 iMatrix{ 1.0f };
 
-			m_modelMatrix = glm::translate(iMatrix, position);
+			m_translationMatrix = glm::translate(iMatrix, position);
 
-			m_modelMatrix = glm::rotate(m_modelMatrix, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-			m_modelMatrix = glm::rotate(m_modelMatrix, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-			m_modelMatrix = glm::rotate(m_modelMatrix, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+			m_roatationlationMatrix = glm::rotate(iMatrix, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+			m_roatationlationMatrix = glm::rotate(m_roatationlationMatrix, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+			m_roatationlationMatrix = glm::rotate(m_roatationlationMatrix, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
 
-			m_modelMatrix = glm::scale(m_modelMatrix, scale);
+			m_scaleMatrix = glm::scale(iMatrix, scale);
+
+			m_modelMatrix = m_translationMatrix * m_roatationlationMatrix * m_scaleMatrix;
 		}
 
 	public:

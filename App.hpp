@@ -14,11 +14,11 @@ public:
 	App() {
 		UIManager::InitImGui();
 
-		m_renderer.CreateObject<Renderer::Shader>("Posterizing shader", "Resources/Shaders/gbuffer");
+		m_renderer.CreateObject<Renderer::Shader>("GBuffer", "Resources/Shaders/gbuffer");
 		auto* camera = m_renderer.CreateObject<Renderer::Camera>("Main", 90.0f, true);
 		camera->position = glm::vec3(0.0f, 0.0f, -1.7f);
 
-		m_renderer.CreateObject<Renderer::Model>("Monke", "Resources/Models/Monke.ply", "Resources/Textures/planks.png");
+		monke = m_renderer.CreateObject<Renderer::Model>("Monke", "Resources/Models/Monke.ply", "Resources/Textures/planks.png");
 
 		UIManager::RegisterElement(this, "App", true);
 	};
@@ -29,6 +29,8 @@ public:
 	App operator=(const App&) = delete;
 
 	void Run();
+
+	Renderer::Model* monke;
 
 private:
 	unsigned int WIDTH = (unsigned int)(1920 * 0.9);
@@ -118,9 +120,12 @@ private:
 
 void App::Run() {
 	while (window.ShouldRunNextFrame()) {
+		//Handle all pre render stuff
+
+		monke->rotation.y += (360.0f / (60.f * 5));
+
 		//Render all geometry with OpenGL
 		m_renderer.RenderFrame();
-
 		//Run UI
 		UIManager::RenderUI();
 	}
